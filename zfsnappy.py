@@ -5,7 +5,7 @@ Created on 01.05.2016
 
 Sammlung der commands:
 
-1 - 2016-12-10 - Erste lauffähig Version
+1 - 2016-12-10 - Erste lauffähig Version - vs.
 
 Prinzipiell geht es
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         if tell:
             print('free %.2f%%' % (perc*100))
         if  perc <= minfree/100:
-            print('False')
+            
             return False
         else:
             return True

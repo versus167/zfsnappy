@@ -7,8 +7,12 @@ Sammlung der commands:
 
 1 - 2016-12-10 - Erste lauffähig Version
 
-Prinzipiell geht es - Die Übergabe der Argumente  ist noch umzuschreiben
-Der Code ist zu säubern...
+Prinzipiell geht es
+
+Todo:
+
+ - Die Übergabe der Argumente  ist noch umzuschreiben
+ - Der Code ist zu säubern...
 
 sudo zfs list -Hp -o avail vs2016/archiv/test - Freier Platz in bytes
 sudo zfs list -Hp -o used vs2016/archiv/test - Genutzer Platz in bytes
@@ -54,9 +58,34 @@ class intervall(object):
     
 
 if __name__ == '__main__':
+    def checkminfree(tell=False):
+        avai = os.popen('zfs list -Hp -o avail '+zfsfs).readlines()
+        used = os.popen('zfs list -Hp -o used '+zfsfs).readlines()
+        #print(avai,used)
+        a = int(avai[0].strip('\n'))
+        u = int(used[0].strip('\n'))
+        perc = a/(a+u)
+        if tell:
+            print('free %.2f%%' % (perc*100))
+        if  perc <= minfree/100:
+            print('False')
+            return False
+        else:
+            return True
+    def getsnaplist():
+        aus = os.popen('zfs list -H -r -t snapshot -o name '+zfsfs).readlines()
+        # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
+        vgl = zfsfs+'@'+snapprefix+'_'
+        l = len(vgl)
+        listesnaps = {}
+        for i in aus:
+            snp = i.strip('\n')
+            if snp[0:l] == vgl:
+                listesnaps[snp] = False
+        return listesnaps
     zfsfs = 'vs2016/archiv/test'
     snapprefix = 'vs'
-    
+    minfree = 20 # in Prozent
     inters = []
     inter = intervall(5,3)
     inters.append(inter)
@@ -67,17 +96,9 @@ if __name__ == '__main__':
     
     # Hier käme dann der ABlauf
     # 1. Liste der vorhanden Snapshots
-    aus = os.popen('zfs list -H -r -t snapshot -o name '+zfsfs).readlines()
-    #print(aus) 
-    
-    # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
+    listesnaps = getsnaplist()
     vgl = zfsfs+'@'+snapprefix+'_'
     l = len(vgl)
-    listesnaps = {}
-    for i in aus:
-        snp = i.strip('\n')
-        if snp[0:l] == vgl:
-            listesnaps[snp] = False
     #print(listesnaps)
     heute = datetime.datetime.now()
     for i in sorted(listesnaps): # Vom ältesten zum neuesten
@@ -94,14 +115,15 @@ if __name__ == '__main__':
                 hold = True
         
         if hold == False:
-            print(i,chkday,hold)
-            cmd = 'zfs destroy '+i
-            print(cmd)
-            aus = os.popen(cmd)
-            for j in aus:
-                print(j)
-        else:
-            print(i,chkday,hold)
+            #print(i,chkday,' zu löschen')
+            if checkminfree() == False:
+                cmd = 'zfs destroy '+i
+                print(cmd)
+                aus = os.popen(cmd)
+                for j in aus:
+                    print(j)
+#         else:
+#             print(i,chkday,hold)
     # Als letztes: Snapshot erstellen
     aktuell = datetime.datetime.now()
     snapname = zfsfs+'@'+snapprefix+'_'+aktuell.isoformat() 
@@ -110,4 +132,14 @@ if __name__ == '__main__':
     aus = os.popen(cmd)
     for j in aus:
         print(j)
-    pass
+    if checkminfree(True) == False:
+        # Dann müssen jetzt noch mehr snaps gelöscht werden - Vom ältesten zum neuesten
+        listesnaps = getsnaplist()
+        for i in sorted(listesnaps):
+            cmd = 'zfs destroy '+i
+            print(cmd)
+            aus = os.popen(cmd)
+            for j in aus:
+                print(j)
+            if checkminfree(True):
+                break

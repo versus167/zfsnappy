@@ -1,5 +1,7 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 '''
-Created on 01.05.2016
+Created on 10.12.2016
 
 @author: volker
 
@@ -11,8 +13,9 @@ Prinzipiell geht es
 
 Todo:
 
- - Die Übergabe der Argumente  ist noch umzuschreiben
- - Der Code ist zu säubern...
+
+  - Der Code ist zu säubern...
+  - Rekursion könnte noch verbaut werden
 
 sudo zfs list -Hp -o avail vs2016/archiv/test - Freier Platz in bytes
 sudo zfs list -Hp -o used vs2016/archiv/test - Genutzer Platz in bytes
@@ -25,6 +28,7 @@ zfs snapshot vs2016/archiv/test@vs-2016 - Snapshot erstellen
 
 import os
 import datetime
+import argparse, sys
 
 class intervall(object):
     '''
@@ -57,47 +61,58 @@ class intervall(object):
         return True
     
 
-if __name__ == '__main__':
+def main():
     def checkminfree(tell=False):
-        avai = os.popen('zfs list -Hp -o avail '+zfsfs).readlines()
-        used = os.popen('zfs list -Hp -o used '+zfsfs).readlines()
+        avai = os.popen('zfs list -Hp -o avail '+ns.zfsfs).readlines()
+        used = os.popen('zfs list -Hp -o used '+ns.zfsfs).readlines()
         #print(avai,used)
         a = int(avai[0].strip('\n'))
         u = int(used[0].strip('\n'))
         perc = a/(a+u)
         if tell:
             print('free %.2f%%' % (perc*100))
-        if  perc <= minfree/100:
+        if  perc <= ns.minfree/100:
             
             return False
         else:
             return True
     def getsnaplist():
-        aus = os.popen('zfs list -H -r -t snapshot -o name '+zfsfs).readlines()
+        aus = os.popen('zfs list -H -r -t snapshot -o name '+ns.zfsfs).readlines()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
-        vgl = zfsfs+'@'+snapprefix+'_'
+        vgl = ns.zfsfs+'@'+ns.prefix+'_'
         l = len(vgl)
         listesnaps = {}
         for i in aus:
             snp = i.strip('\n')
             if snp[0:l] == vgl:
                 listesnaps[snp] = False
+        #print(listesnaps)
         return listesnaps
-    zfsfs = 'vs2016/archiv/test'
-    snapprefix = 'vs'
-    minfree = 20 # in Prozent
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--holdinterval", dest="holds",
+                  help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
+                  nargs=2,type=int,action='append',required=True)
+    parser.add_argument("-f","--filesystem",dest='zfsfs',
+                      help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
+    parser.add_argument('-m','--minfree',dest='minfree',
+                      help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent',type=int, default=20)
+    parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
+    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree',
+                        default=1)
+    ns = parser.parse_args(sys.argv[1:])
+#     zfsfs = 'vs2016/archiv/test'
+#     snapprefix = 'vs'
+#     minfree = 20 # in Prozent
     inters = []
-    inter = intervall(5,3)
-    inters.append(inter)
-    inter = intervall(25,3)
-    inters.append(inter)
-    inter = intervall(1,5)
-    inters.append(inter)
+    for i in ns.holds:
+        inter = intervall(i[0],i[1])
+        inters.append(inter)
+    
     
     # Hier käme dann der ABlauf
     # 1. Liste der vorhanden Snapshots
     listesnaps = getsnaplist()
-    vgl = zfsfs+'@'+snapprefix+'_'
+    vgl = ns.zfsfs+'@'+ns.prefix+'_'
     l = len(vgl)
     #print(listesnaps)
     heute = datetime.datetime.now()
@@ -116,7 +131,7 @@ if __name__ == '__main__':
         
         if hold == False:
             #print(i,chkday,' zu löschen')
-            if checkminfree() == False:
+            if checkminfree() == False or ns.dm == 2:
                 cmd = 'zfs destroy '+i
                 print(cmd)
                 aus = os.popen(cmd)
@@ -126,7 +141,7 @@ if __name__ == '__main__':
 #             print(i,chkday,hold)
     # Als letztes: Snapshot erstellen
     aktuell = datetime.datetime.now()
-    snapname = zfsfs+'@'+snapprefix+'_'+aktuell.isoformat() 
+    snapname = ns.zfsfs+'@'+ns.prefix+'_'+aktuell.isoformat() 
     cmd = 'zfs snapshot '+snapname
     print(cmd)
     aus = os.popen(cmd)
@@ -143,3 +158,6 @@ if __name__ == '__main__':
                 print(j)
             if checkminfree(True):
                 break
+            
+if __name__ == '__main__':
+    a = main()

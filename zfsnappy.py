@@ -16,6 +16,7 @@ Todo:
 
   - Der Code ist zu säubern...
   - Rekursion könnte noch verbaut werden
+  - man könnte noch minfree nach absoluter Größe abprüfen
 
 sudo zfs list -Hp -o avail vs2016/archiv/test - Freier Platz in bytes
 sudo zfs list -Hp -o used vs2016/archiv/test - Genutzer Platz in bytes
@@ -46,7 +47,7 @@ class intervall(object):
         Hier soll ein Tag übergeben werden.
         
         Dafür wird der Intervall ermittelt. Und wenn wir dort noch nichts haben gibt es ein True (behalten) zurück.
-        Sonst falls.
+        Sonst false.
         Auch wenn außerhalb der holdversions
         '''
     

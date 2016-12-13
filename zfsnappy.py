@@ -141,14 +141,15 @@ def main():
 #         else:
 #             print(i,chkday,hold)
     # Als letztes: Snapshot erstellen
-    aktuell = datetime.datetime.now()
-    snapname = ns.zfsfs+'@'+ns.prefix+'_'+aktuell.isoformat() 
-    cmd = 'zfs snapshot '+snapname
-    print(cmd)
-    aus = os.popen(cmd)
-    for j in aus:
-        print(j)
-    if checkminfree(True) == False:
+    if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
+        aktuell = datetime.datetime.now()
+        snapname = ns.zfsfs+'@'+ns.prefix+'_'+aktuell.isoformat() 
+        cmd = 'zfs snapshot '+snapname
+        print(cmd)
+        aus = os.popen(cmd)
+        for j in aus:
+            print(j)
+    else:
         # Dann müssen jetzt noch mehr snaps gelöscht werden - Vom ältesten zum neuesten
         listesnaps = getsnaplist()
         for i in sorted(listesnaps):

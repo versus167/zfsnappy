@@ -7,7 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
-1 - 2016-12-10 - Erste lauffähig Version - vs.
+1 - 2016-12-10 - Erste lauffähige Version - vs.
 
 Prinzipiell geht es
 
@@ -26,9 +26,11 @@ zfs snapshot vs2016/archiv/test@vs-2016 - Snapshot erstellen
 
 
 '''
+APPNAME='zfsnappy'
+VERSION='1 - 2016-12-10'
 
 import os
-import datetime
+import datetime, time
 import argparse, sys
 
 class intervall(object):
@@ -89,6 +91,7 @@ def main():
                 listesnaps[snp] = False
         #print(listesnaps)
         return listesnaps
+    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,'Start')
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--holdinterval", dest="holds",
                   help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
@@ -160,6 +163,6 @@ def main():
                 print(j)
             if checkminfree(True):
                 break
-            
+    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,'Stop')
 if __name__ == '__main__':
     a = main()

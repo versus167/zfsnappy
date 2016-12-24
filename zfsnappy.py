@@ -7,6 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
+2 - 2016-12-24 - Mit Ausgabe der Paramater für das Log - vs.
 1 - 2016-12-10 - Erste lauffähige Version - vs.
 
 Prinzipiell geht es
@@ -18,16 +19,10 @@ Todo:
   - Rekursion könnte noch verbaut werden
   - man könnte noch minfree nach absoluter Größe abprüfen
 
-sudo zfs list -Hp -o avail vs2016/archiv/test - Freier Platz in bytes
-sudo zfs list -Hp -o used vs2016/archiv/test - Genutzer Platz in bytes
-sudo zfs list -H -r -t snapshot -o name,creation vs2016/archiv/test - Liste der Snapshots mit Name und Erstelldatum
-zfs destroy vs2016/archiv/test@hourly_2016-12-10_09.17.01--2d - Snapshot löschen
-zfs snapshot vs2016/archiv/test@vs-2016 - Snapshot erstellen
-
 
 '''
 APPNAME='zfsnappy'
-VERSION='1 - 2016-12-10'
+VERSION='2 - 2016-12-24'
 
 import os
 import datetime, time
@@ -92,6 +87,7 @@ def main():
         #print(listesnaps)
         return listesnaps
     print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,'Start')
+    print('Aufrufparameter:',sys.argv[1:])
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--holdinterval", dest="holds",
                   help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",

@@ -7,7 +7,8 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
-2 - 2016-12-24 - Mit Ausgabe der Paramater für das Log - vs.
+3 - 2016-12-28 - Check ob das Filesystem gemoountet ist - vs.
+2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
 1 - 2016-12-10 - Erste lauffähige Version - vs.
 
 Prinzipiell geht es
@@ -22,7 +23,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='2 - 2016-12-24'
+VERSION='3 - 2016-12-28'
 
 import os
 import datetime, time
@@ -107,7 +108,14 @@ def main():
     for i in ns.holds:
         inter = intervall(i[0],i[1])
         inters.append(inter)
-    
+    # 0.1 Cheock ob das FS gemounted ist
+    mounted = os.popen('zfs get -H mounted '+ns.zfsfs).readlines()
+    if mounted.split(' ')[2] == 'yes':
+        # dann alles io
+        pass
+    else:
+        print(ns.zfsfs,'ist nicht gemounted! Abbruch!')
+        exit(1)
     
     # Hier käme dann der ABlauf
     # 1. Liste der vorhanden Snapshots

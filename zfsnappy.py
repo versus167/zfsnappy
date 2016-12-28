@@ -110,7 +110,7 @@ def main():
         inters.append(inter)
     # 0.1 Cheock ob das FS gemounted ist
     mounted = os.popen('zfs get -H mounted '+ns.zfsfs).readlines()
-    if mounted.split(' ')[2] == 'yes':
+    if mounted[0].split('\t')[2] == 'yes':
         # dann alles io
         pass
     else:

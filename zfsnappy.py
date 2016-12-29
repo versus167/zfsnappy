@@ -110,14 +110,18 @@ def main():
         inters.append(inter)
     # 0.1 Cheock ob das FS gemounted ist
     mounted = os.popen('zfs get -H mounted '+ns.zfsfs).readlines()
-    if mounted[0].split('\t')[2] == 'yes':
-        # dann alles io
-        pass
-    else:
+    try:
+        if mounted[0].split('\t')[2] == 'yes':
+            # dann alles io
+            pass
+        else:
+            print(ns.zfsfs,'ist nicht gemounted! Abbruch!')
+            exit(1)
+    except:
         print(ns.zfsfs,'ist nicht gemounted! Abbruch!')
         exit(1)
     
-    # Hier käme dann der ABlauf
+    # Hier käme dann der Ablauf
     # 1. Liste der vorhanden Snapshots
     listesnaps = getsnaplist()
     vgl = ns.zfsfs+'@'+ns.prefix+'_'

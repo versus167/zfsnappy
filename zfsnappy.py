@@ -88,7 +88,7 @@ def main():
         #print(listesnaps)
         return listesnaps
     print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,'Start')
-    print('Aufrufparameter:',sys.argv[1:])
+    print('Aufrufparameter:',' '.join(sys.argv[1:]))
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--holdinterval", dest="holds",
                   help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",

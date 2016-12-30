@@ -101,9 +101,7 @@ def main():
     parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree',
                         default=1)
     ns = parser.parse_args(sys.argv[1:])
-#     zfsfs = 'vs2016/archiv/test'
-#     snapprefix = 'vs'
-#     minfree = 20 # in Prozent
+
     inters = []
     for i in ns.holds:
         inter = intervall(i[0],i[1])
@@ -129,10 +127,10 @@ def main():
     #print(listesnaps)
     heute = datetime.datetime.now()
     for i in sorted(listesnaps): # Vom ältesten zum neuesten
-        #print(i,listesnaps[i])
+        
         #erstmal die difftage zu heute ermitteln
         dstring = i[l:]
-        #print(dstring)
+        
         dt = datetime.datetime.strptime(dstring,'%Y-%m-%dT%H:%M:%S.%f')
         tmp = heute - dt
         chkday = tmp.days 
@@ -142,15 +140,14 @@ def main():
                 hold = True
         
         if hold == False:
-            #print(i,chkday,' zu löschen')
+            
             if checkminfree() == False or ns.dm == 2:
                 cmd = 'zfs destroy '+i
                 print(cmd)
                 aus = os.popen(cmd)
                 for j in aus:
                     print(j)
-#         else:
-#             print(i,chkday,hold)
+
     # Als letztes: Snapshot erstellen
     if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
         aktuell = datetime.datetime.now()

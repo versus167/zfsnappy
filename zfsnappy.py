@@ -88,7 +88,7 @@ def main():
                 listesnaps[snp] = False
         #print(listesnaps)
         return listesnaps
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,'Start')
+    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Start')
     print('Aufrufparameter:',' '.join(sys.argv[1:]))
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--holdinterval", dest="holds",
@@ -171,6 +171,6 @@ def main():
                 print(j)
             if checkminfree(True):
                 break
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,'Stop')
+    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ******************** Stop')
 if __name__ == '__main__':
     a = main()

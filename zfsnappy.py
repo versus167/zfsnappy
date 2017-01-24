@@ -70,12 +70,13 @@ def main():
         u = int(used[0].strip('\n'))
         perc = a/(a+u)
         if tell:
-            print('free %.2f%%' % (perc*100))
+            print('free %.2f%% %.2fGB' % (perc*100,a/(1024*1024*1024)))
         if  perc <= ns.minfree/100:
             
             return False
-        else:
-            return True
+        if a/(1024*1024*1024) < ns.freespace:
+            return False
+        return True
     def getsnaplist():
         aus = os.popen('zfs list -H -r -t snapshot -o name '+ns.zfsfs).readlines()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
@@ -171,6 +172,6 @@ def main():
                 print(j)
             if checkminfree(True):
                 break
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ******************** Stop')
+    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Stop')
 if __name__ == '__main__':
     a = main()

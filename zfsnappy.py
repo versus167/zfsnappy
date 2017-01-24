@@ -7,7 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
- 
+4 - 2017-01-24 - Jetzt mit Check des freespace in GB - option -s - vs. 
 3 - 2016-12-28 - Check ob das Filesystem gemoountet ist - vs.
 2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
 1 - 2016-12-10 - Erste lauffähige Version - vs.
@@ -19,12 +19,11 @@ Todo:
 
   - Der Code ist zu säubern...
   - Rekursion könnte noch verbaut werden
-  - man könnte noch minfree nach absoluter Größe abprüfen
-
+  
 
 '''
 APPNAME='zfsnappy'
-VERSION='3 - 2016-12-28'
+VERSION='4 - 2017-01-24'
 
 import os
 import datetime, time

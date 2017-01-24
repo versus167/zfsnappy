@@ -73,7 +73,8 @@ def main():
         if  perc <= ns.minfree/100:
             
             return False
-        if a/(1024*1024*1024) < ns.freespace:
+        if a/(1024*1024*1024) <= ns.freespace:
+            
             return False
         return True
     def getsnaplist():

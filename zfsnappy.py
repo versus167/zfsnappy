@@ -7,6 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
+5 - 2017-01-28 - sleep(10) in minfree eingebaut, damit zfs nachkommt - vs.
 4 - 2017-01-24 - Jetzt mit Check des freespace in GB - option -s - vs. 
 3 - 2016-12-28 - Check ob das Filesystem gemoountet ist - vs.
 2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
@@ -62,6 +63,9 @@ class intervall(object):
 
 def main():
     def checkminfree(tell=False):
+        time.sleep(10) 
+        ''' Erstmal 10 Sekunden warten, damit sich ZFS besinnen kann, wieviel Platz wirklich frei ist -
+        falls gerade vorher ein Snapshot gelöscht wurde ''' 
         avai = os.popen('zfs list -Hp -o avail '+ns.zfsfs).readlines()
         used = os.popen('zfs list -Hp -o used '+ns.zfsfs).readlines()
         #print(avai,used)

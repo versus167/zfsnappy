@@ -7,7 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
-5 - 2017-01-28 - sleep(10) in minfree eingebaut, damit zfs nachkommt - vs.
+5 - 2017-01-28 - sleep(10) in minfree eingebaut, damit zfs nachkommt + bugfix - vs.
 4 - 2017-01-24 - Jetzt mit Check des freespace in GB - option -s - vs. 
 3 - 2016-12-28 - Check ob das Filesystem gemoountet ist - vs.
 2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
@@ -63,7 +63,8 @@ class intervall(object):
 
 def main():
     def checkminfree(tell=False):
-        time.sleep(10) 
+        
+        
         ''' Erstmal 10 Sekunden warten, damit sich ZFS besinnen kann, wieviel Platz wirklich frei ist -
         falls gerade vorher ein Snapshot gelöscht wurde ''' 
         avai = os.popen('zfs list -Hp -o avail '+ns.zfsfs).readlines()
@@ -75,12 +76,27 @@ def main():
         if tell:
             print('free %.2f%% %.2fGB' % (perc*100,a/(1024*1024*1024)))
         if  perc <= ns.minfree/100:
-            
+            print('prozemtual zu wenig frei - %.2ff < ' % (perc*100,),ns.minfree,'%')
             return False
         if a/(1024*1024*1024) <= ns.freespace:
-            
+            print('zu wenig GB frei - %.2f < ' % (a/(1024*1024*1024),),ns.freespace,'GB')
             return False
         return True
+    def takeSnapshot():
+        aktuell = datetime.datetime.now()
+        snapname = ns.zfsfs+'@'+ns.prefix+'_'+aktuell.isoformat() 
+        cmd = 'zfs snapshot '+snapname
+        print(cmd)
+        aus = os.popen(cmd)
+        for j in aus:
+            print(j)
+    def destroySnapshot(name):
+        cmd = 'zfs destroy '+name
+        print(cmd)
+        aus = os.popen(cmd)
+        for j in aus:
+            print(j)
+        time.sleep(10) 
     def getsnaplist():
         aus = os.popen('zfs list -H -r -t snapshot -o name '+ns.zfsfs).readlines()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
@@ -91,7 +107,9 @@ def main():
             snp = i.strip('\n')
             if snp[0:l] == vgl:
                 listesnaps[snp] = False
-        #print(listesnaps)
+#         for i in sorted(listesnaps):
+#             print(i)
+        
         return listesnaps
     print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Start')
     print('Aufrufparameter:',' '.join(sys.argv[1:]))
@@ -146,36 +164,24 @@ def main():
         for x in inters:
             if x.checkday(chkday):
                 hold = True
+                #print(i, 'Hold')
         
         if hold == False:
             
             if checkminfree() == False or ns.dm == 2:
-                cmd = 'zfs destroy '+i
-                print(cmd)
-                aus = os.popen(cmd)
-                for j in aus:
-                    print(j)
-
+                destroySnapshot(i)
     # Als letztes: Snapshot erstellen
     if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
-        aktuell = datetime.datetime.now()
-        snapname = ns.zfsfs+'@'+ns.prefix+'_'+aktuell.isoformat() 
-        cmd = 'zfs snapshot '+snapname
-        print(cmd)
-        aus = os.popen(cmd)
-        for j in aus:
-            print(j)
+        takeSnapshot()
     else:
         # Dann müssen jetzt noch mehr snaps gelöscht werden - Vom ältesten zum neuesten
         listesnaps = getsnaplist()
         for i in sorted(listesnaps):
-            cmd = 'zfs destroy '+i
-            print(cmd)
-            aus = os.popen(cmd)
-            for j in aus:
-                print(j)
+            destroySnapshot(i)
             if checkminfree(True):
+                takeSnapshot()
                 break
+    
     print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Stop')
 if __name__ == '__main__':
     a = main()

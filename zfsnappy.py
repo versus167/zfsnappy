@@ -116,7 +116,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--holdinterval", dest="holds",
                   help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
-                  nargs=2,type=int,action='append',required=True)
+                  nargs=2,type=int,action='append',default=((1,1),))
     parser.add_argument("-f","--filesystem",dest='zfsfs',
                       help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
     parser.add_argument('-m','--minfree',dest='minfree',
@@ -127,7 +127,7 @@ def main():
     parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree',
                         default=1)
     ns = parser.parse_args(sys.argv[1:])
-
+    #print(ns)
     inters = []
     for i in ns.holds:
         inter = intervall(i[0],i[1])

@@ -114,9 +114,11 @@ def main():
     print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Start')
     print('Aufrufparameter:',' '.join(sys.argv[1:]))
     parser = argparse.ArgumentParser()
+    defaultintervall = []
+    defaultintervall.append((1,1))
     parser.add_argument("-i", "--holdinterval", dest="holds",
                   help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
-                  nargs=2,type=int,action='append',default=((1,1),))
+                  nargs=2,type=int,action='append',default=defaultintervall)
     parser.add_argument("-f","--filesystem",dest='zfsfs',
                       help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
     parser.add_argument('-m','--minfree',dest='minfree',

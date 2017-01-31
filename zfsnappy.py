@@ -7,6 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
+6 - 2017-01-30 - default für -i auf 1 1 gesetzt - vs. 
 5 - 2017-01-28 - sleep(10) nach destroy eingebaut, damit zfs nachkommt + bugfix - vs.
 4 - 2017-01-24 - Jetzt mit Check des freespace in GB - option -s - vs. 
 3 - 2016-12-28 - Check ob das Filesystem gemoountet ist - vs.
@@ -24,7 +25,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='5 - 2017-01-28'
+VERSION='6 - 2017-01-30'
 
 import os
 import datetime, time

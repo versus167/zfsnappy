@@ -177,7 +177,6 @@ def main():
     if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
         takeSnapshot()
     else:
-        print('Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
         # Dann müssen jetzt noch mehr snaps gelöscht werden - Vom ältesten zum neuesten
         listesnaps = getsnaplist()
         for i in sorted(listesnaps):

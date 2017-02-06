@@ -178,6 +178,7 @@ def main():
         takeSnapshot()
     else:
         # Dann müssen jetzt noch mehr snaps gelöscht werden - Vom ältesten zum neuesten
+        print('Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
         listesnaps = getsnaplist()
         for i in sorted(listesnaps):
             destroySnapshot(i)

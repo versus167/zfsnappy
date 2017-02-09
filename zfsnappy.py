@@ -7,6 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
+7 - 2017-02-09 - deletemode 3 eingeführt -> Da wird überhaupt nichts gelöscht - vs.
 6 - 2017-01-30 - default für -i auf 1 1 gesetzt - vs. 
 5 - 2017-01-28 - sleep(10) nach destroy eingebaut, damit zfs nachkommt + bugfix - vs.
 4 - 2017-01-24 - Jetzt mit Check des freespace in GB - option -s - vs. 
@@ -25,7 +26,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='6 - 2017-01-30'
+VERSION='7 - 2017-02-09'
 
 import os
 import datetime, time
@@ -92,6 +93,9 @@ def main():
         for j in aus:
             print(j)
     def destroySnapshot(name):
+        if ns.dm == 3:
+            # dm ==3 -> nichts wird gelöscht - im Zweifel wird halt dann kein Snapshot erstellt
+            return
         cmd = 'zfs destroy '+name
         print(cmd)
         aus = os.popen(cmd)
@@ -127,7 +131,7 @@ def main():
     parser.add_argument('-s','--spacefree',dest='freespace',
                         help='Mindestens freier Speicher in GB - default ausgeschalten',type=int,default=0)
     parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
-    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree',
+    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3- es wird nichts gelöscht',
                         default=1)
     ns = parser.parse_args(sys.argv[1:])
     #print(ns)

@@ -133,6 +133,8 @@ def main():
     parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
     parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3- es wird nichts gelöscht',
                         default=1)
+    parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an denen regulär nichts gelöscht wird - nach freizuhaltendem Space wird trotzdem gelöscht',
+                         default=0)
     ns = parser.parse_args(sys.argv[1:])
     #print(ns)
     inters = []
@@ -168,6 +170,8 @@ def main():
         tmp = heute - dt
         chkday = tmp.days 
         hold = False
+        if chkday <= ns.nodeletedays:
+            hold = True
         for x in inters:
             if x.checkday(chkday):
                 hold = True

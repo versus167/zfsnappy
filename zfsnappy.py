@@ -7,6 +7,8 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
+8 - 2017-02-13 - -n --nodeletedays eingeführt - snapshots die jünger als diese Anzahl Tage sind, werden nicht gelöscht.
+                 Es sei denn minfree wird unterschritten... - vs.
 7 - 2017-02-09 - deletemode 3 eingeführt -> Da wird überhaupt nichts gelöscht - vs.
 6 - 2017-01-30 - default für -i auf 1 1 gesetzt - vs. 
 5 - 2017-01-28 - sleep(10) nach destroy eingebaut, damit zfs nachkommt + bugfix - vs.
@@ -26,7 +28,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='7 - 2017-02-09'
+VERSION='8 - 2017-02-13'
 
 import os
 import datetime, time
@@ -171,6 +173,7 @@ def main():
         chkday = tmp.days 
         hold = False
         if chkday <= ns.nodeletedays:
+            #print(i,'in days',chkday)
             hold = True
         for x in inters:
             if x.checkday(chkday):

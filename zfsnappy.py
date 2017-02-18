@@ -7,6 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
+9 - 2017-02-18 - -v --verbose hinzugefügt - macht zfsnappy etwas gesprächiger - vs.
 8 - 2017-02-13 - -n --nodeletedays eingeführt - snapshots die jünger als diese Anzahl Tage sind, werden nicht gelöscht.
                  Es sei denn minfree wird unterschritten... - vs.
 7 - 2017-02-09 - deletemode 3 eingeführt -> Da wird überhaupt nichts gelöscht - vs.
@@ -28,7 +29,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='8 - 2017-02-13'
+VERSION='9 - 2017-02-18'
 
 import os
 import datetime, time
@@ -136,9 +137,11 @@ def main():
     parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3- es wird nichts gelöscht',
                         default=1)
     parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an denen regulär nichts gelöscht wird - nach freizuhaltendem Space wird trotzdem gelöscht',
-                         default=0)
+                        default=0)
+    parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger',default=False)
+    parser.set_defaults(verbose=False)
     ns = parser.parse_args(sys.argv[1:])
-    #print(ns)
+    
     inters = []
     for i in ns.holds:
         inter = intervall(i[0],i[1])
@@ -161,7 +164,7 @@ def main():
     listesnaps = getsnaplist()
     vgl = ns.zfsfs+'@'+ns.prefix+'_'
     l = len(vgl)
-    #print(listesnaps)
+    
     heute = datetime.datetime.now()
     for i in sorted(listesnaps): # Vom ältesten zum neuesten
         
@@ -173,16 +176,27 @@ def main():
         chkday = tmp.days 
         hold = False
         if chkday <= ns.nodeletedays:
+            if ns.verbose:
+                print('Hold für ',i,'wegen "nodeletedays"')
             #print(i,'in days',chkday)
             hold = True
-        for x in inters:
-            if x.checkday(chkday):
-                hold = True
-                #print(i, 'Hold')
+        else:
+            for x in inters:
+                if x.checkday(chkday):
+                    if ns.verbose:
+                        print('Hold für ',i,' wegen "interval" days:',x.intervalllaenge,'Anzahl:',x.holdversions )
+                    hold = True
+                    break
+                    
         
         if hold == False:
             
             if checkminfree() == False or ns.dm == 2:
+                if ns.verbose:
+                    if ns.dm == 2:
+                        print('delete wegen deletemode = 2')
+                    else:
+                        print('delete wegen freespace')
                 destroySnapshot(i)
     # Als letztes: Snapshot erstellen
     if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
@@ -192,6 +206,8 @@ def main():
         print('Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
         listesnaps = getsnaplist()
         for i in sorted(listesnaps):
+            if ns.verbose:
+                print('delete wegen freespace')
             destroySnapshot(i)
             if checkminfree(True):
                 takeSnapshot()

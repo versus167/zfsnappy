@@ -186,7 +186,7 @@ def main():
                     if ns.verbose:
                         print('Hold für ',i,' wegen "interval" days:',x.intervalllaenge,'Anzahl:',x.holdversions )
                     hold = True
-                    break
+                    
                     
         
         if hold == False:

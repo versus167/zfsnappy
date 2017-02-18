@@ -160,6 +160,11 @@ def main():
         exit(1)
     
     # Hier käme dann der Ablauf
+    if ns.dm == 3:
+        # Dann wird nur gecheckt ob genug Platz ist für einen neuen Snapshot
+        if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
+            takeSnapshot()
+        return
     # 1. Liste der vorhanden Snapshots
     listesnaps = getsnaplist()
     vgl = ns.zfsfs+'@'+ns.prefix+'_'

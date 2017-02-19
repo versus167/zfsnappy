@@ -179,7 +179,8 @@ def main():
         dt = datetime.datetime.strptime(dstring,'%Y-%m-%dT%H:%M:%S.%f')
         tmp = heute - dt
         chkday = tmp.days 
-        print(i, chkday,'days')
+        if ns.verbose:
+            print(i, chkday,'days')
         hold = False
         if chkday <= ns.nodeletedays and ns.nodeletedays>0:
             if ns.verbose:

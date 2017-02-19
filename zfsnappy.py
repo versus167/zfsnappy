@@ -86,7 +86,7 @@ def main():
                 print(fsys,'ist nicht gemounted!')
             return 1
         autosnapshot = os.popen('zfs get -H com.sun:auto-snapshot '+fsys).readlines()
-        if autosnapshot[0].split('\t')[2] == 'False':
+        if autosnapshot[0].split('\t')[2].lower() == 'false':
             if ns.verbose:
                 print(fsys,'com.sun:auto-snapshot = False')
             return 2

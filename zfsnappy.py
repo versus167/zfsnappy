@@ -7,7 +7,7 @@ Created on 10.12.2016
 
 Sammlung der commands:
 
-10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=off haben
+10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=False haben
                 werden nicht behandelt
 9 - 2017-02-18 - -v --verbose hinzugefügt - macht zfsnappy etwas gesprächiger - vs.
 8 - 2017-02-13 - -n --nodeletedays eingeführt - snapshots die jünger als diese Anzahl Tage sind, werden nicht gelöscht.
@@ -70,7 +70,7 @@ class intervall(object):
 
 def main():
     def checkfs(fsys):
-        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=off gesetzt ist oder ob es nicht gemountet ist
+        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
         - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
         mounted = os.popen('zfs get -H mounted '+fsys).readlines()
         try:
@@ -86,9 +86,9 @@ def main():
                 print(fsys,'ist nicht gemounted!')
             return 1
         autosnapshot = os.popen('zfs get -H com.sun:auto-snapshot '+fsys).readlines()
-        if autosnapshot[0].split('\t')[2] == 'off':
+        if autosnapshot[0].split('\t')[2] == 'False':
             if ns.verbose:
-                print(fsys,'com.sun:auto-snapshot = off')
+                print(fsys,'com.sun:auto-snapshot = False')
             return 2
         return 0
     def checkminfree(tell=False):

@@ -67,6 +67,28 @@ class intervall(object):
     
 
 def main():
+    def checkfs(fs):
+        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=off gesetzt ist oder ob es nicht gemountet ist
+        - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
+        mounted = os.popen('zfs get -H mounted '+fs).readlines()
+        try:
+            if mounted[0].split('\t')[2] == 'yes':
+                # dann alles io
+                pass
+            else:
+                if ns.verbose: 
+                    print(fs,'ist nicht gemounted!')
+                return 1
+        except:
+            if ns.verbose:
+                print(fs,'ist nicht gemounted!')
+            return 1
+        autosnapshot = os.popen('zfs get -H com.sun:auto-snapshot '+fs).readlines()
+        if autosnapshot[0].split('\t')[2] == 'off':
+            if ns.verbose:
+                print(fs,'com.sun:auto-snapshot = off')
+            return 2
+        return True
     def checkminfree(tell=False):
         
         
@@ -147,17 +169,9 @@ def main():
         inter = intervall(i[0],i[1])
         inters.append(inter)
     # 0.1 Cheock ob das FS gemounted ist
-    mounted = os.popen('zfs get -H mounted '+ns.zfsfs).readlines()
-    try:
-        if mounted[0].split('\t')[2] == 'yes':
-            # dann alles io
-            pass
-        else:
-            print(ns.zfsfs,'ist nicht gemounted! Abbruch!')
-            exit(1)
-    except:
-        print(ns.zfsfs,'ist nicht gemounted! Abbruch!')
-        exit(1)
+    ret =  checkfs(ns.zfsfs)
+    if ret != True:
+        return ret
     
     # Hier käme dann der Ablauf
     if ns.dm == 3:

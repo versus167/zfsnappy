@@ -168,7 +168,7 @@ def main():
     parser.set_defaults(recursion=False)
     ns = parser.parse_args(sys.argv[1:])
     if ns.holds == []:
-        ns.hold.append((1,1))
+        ns.holds.append((1,1))
     inters = []
     for i in ns.holds:
         inter = intervall(i[0],i[1])

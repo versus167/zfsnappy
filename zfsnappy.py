@@ -147,7 +147,7 @@ def main():
     print('Aufrufparameter:',' '.join(sys.argv[1:]))
     parser = argparse.ArgumentParser()
     defaultintervall = []
-    defaultintervall.append((1,1))
+    
     parser.add_argument("-i", "--holdinterval", dest="holds",
                   help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
                   nargs=2,type=int,action='append',default=defaultintervall)
@@ -167,7 +167,8 @@ def main():
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
     ns = parser.parse_args(sys.argv[1:])
-    
+    if ns.holds == []:
+        ns.hold.append((1,1))
     inters = []
     for i in ns.holds:
         inter = intervall(i[0],i[1])

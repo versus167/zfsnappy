@@ -3,9 +3,8 @@
 '''
 Created on 10.12.2016
 
-@author: volker
+@author: volker.suess
 
-Sammlung der commands:
 
 10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=False haben
                 werden nicht behandelt
@@ -20,7 +19,7 @@ Sammlung der commands:
 2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
 1 - 2016-12-10 - Erste lauffähige Version - vs.
 
-Prinzipiell geht es
+
 
 Todo:
 

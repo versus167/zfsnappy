@@ -104,7 +104,7 @@ def main():
         if tell:
             print('free %.2f%% %.2fGB' % (perc*100,a/(1024*1024*1024)))
         if  perc <= ns.minfree/100:
-            print('prozemtual zu wenig frei - %.2ff < ' % (perc*100,),ns.minfree,'%')
+            print('prozentual zu wenig frei - %.2f%% < ' % (perc*100,),ns.minfree,'%')
             return False
         if a/(1024*1024*1024) <= ns.freespace:
             print('zu wenig GB frei - %.2f < ' % (a/(1024*1024*1024),),ns.freespace,'GB')

@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-
+11 - 2017-05-10 - -k --keep Anzahl Snapshots auf keinen Fall löschen - minfree spielt dabei keine Rolle 
 10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=False haben
                 werden nicht behandelt
 9 - 2017-02-18 - -v --verbose hinzugefügt - macht zfsnappy etwas gesprächiger - vs.
@@ -30,7 +30,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='10 - 2017-02-19'
+VERSION='11 - 2017-05-10'
 
 import os
 import datetime, time
@@ -119,11 +119,17 @@ def main():
         for j in aus:
             print(j)
     def destroySnapshot(name):
+        global snapcount # Ausnahmsweise...
         if ns.dm == 3:
             # dm ==3 -> nichts wird gelöscht - im Zweifel wird halt dann kein Snapshot erstellt
             return
+        if ns.keepsnapshots >= snapcount:
+            if ns.verbose:
+                print(name,'wird nicht gelöscht wegen keepsnapshots',ns.keepsnapshots,'>= snapcount',snapcount)
+            return
         cmd = 'zfs destroy '+name
         print(cmd)
+        snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
         aus = os.popen(cmd)
         for j in aus:
             print(j)
@@ -165,6 +171,8 @@ def main():
     parser.set_defaults(verbose=False)
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
+    parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
+    snapcount = 0
     ns = parser.parse_args(sys.argv[1:])
     if ns.holds == []:
         ns.holds.append((1,1))
@@ -197,6 +205,7 @@ def main():
             continue
         # 1. Liste der vorhanden Snapshots
         listesnaps = getsnaplist()
+        snapcount = len(listesnaps)
         vgl = fs+'@'+ns.prefix+'_'
         l = len(vgl)
         

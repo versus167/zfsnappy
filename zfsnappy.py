@@ -172,7 +172,7 @@ def main():
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
-    snapcount = 0
+    global snapcount
     ns = parser.parse_args(sys.argv[1:])
     if ns.holds == []:
         ns.holds.append((1,1))

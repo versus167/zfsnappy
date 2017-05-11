@@ -47,6 +47,7 @@ class intervall(object):
         self.intervalllaenge = int(intervalllaenge)
         self.holdversions = holdversions
         self.intervalls = {}
+        self.intervallnraktuell = 0
     def checkday(self,day):
         '''
         Hier soll ein Tag übergeben werden.
@@ -64,6 +65,7 @@ class intervall(object):
                 return False
         except:
             self.intervalls[i] = True
+        self.intervallnraktuell = i
         return True
     
 
@@ -230,7 +232,7 @@ def main():
                 for x in inters:
                     if x.checkday(chkday):
                         if ns.verbose:
-                            print('Hold für ',i,' wegen "interval" days:',x.intervalllaenge,'Anzahl:',x.holdversions )
+                            print('Hold für ',i,' wegen "interval" days:',x.intervalllaenge,'Anzahl:',x.holdversions ,'Intervallnummer',x.intervallnraktuell+1)
                         hold = True
                         
                         

@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-11 - 2017-05-10 - -k --keep Anzahl Snapshots auf keinen Fall löschen - minfree spielt dabei keine Rolle 
+11 - 2017-05-11 - -k --keep Anzahl Snapshots auf keinen Fall löschen - minfree spielt dabei keine Rolle 
 10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=False haben
                 werden nicht behandelt
 9 - 2017-02-18 - -v --verbose hinzugefügt - macht zfsnappy etwas gesprächiger - vs.
@@ -30,7 +30,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='11 - 2017-05-10'
+VERSION='11 - 2017-05-11'
 
 import os
 import datetime, time
@@ -232,7 +232,7 @@ def main():
                 for x in inters:
                     if x.checkday(chkday):
                         if ns.verbose:
-                            print('Hold für ',i,' wegen "interval" days:',x.intervalllaenge,'Anzahl:',x.holdversions ,'Intervallnummer',x.intervallnraktuell+1)
+                            print('Hold für ',i,' wegen "Intervall" days:',x.intervalllaenge,'Anzahl:',x.holdversions ,'Intervallnummer:',x.intervallnraktuell+1)
                         hold = True
                         
                         

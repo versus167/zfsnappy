@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+12 - 2017-05-30 - --dry-run - Trockentest ohne löschen und snapshot - vs.
 11 - 2017-05-11 - -k --keep Anzahl Snapshots auf keinen Fall löschen - minfree spielt dabei keine Rolle 
 10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=False haben
                 werden nicht behandelt
@@ -117,9 +118,12 @@ def main():
         snapname = fs+'@'+ns.prefix+'_'+aktuell.isoformat() 
         cmd = 'zfs snapshot '+snapname
         print(cmd)
-        aus = os.popen(cmd)
-        for j in aus:
-            print(j)
+        if ns.dryrun:
+            pass
+        else:
+            aus = os.popen(cmd)
+            for j in aus:
+                print(j)
     def destroySnapshot(name):
         global snapcount # Ausnahmsweise...
         if ns.dm == 3:
@@ -132,9 +136,12 @@ def main():
         cmd = 'zfs destroy '+name
         print(cmd)
         snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
-        aus = os.popen(cmd)
-        for j in aus:
-            print(j)
+        if ns.dryrun:
+            pass
+        else:
+            aus = os.popen(cmd)
+            for j in aus:
+                print(j)
         time.sleep(10) 
     def getsnaplist():
         aus = os.popen('zfs list -H -r -t snapshot -o name '+fs).readlines()
@@ -174,6 +181,7 @@ def main():
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
+    parser.add.argument('--dry-run',dest='dryrun',action='store_true','Trockentest ohne Veränderung am System')
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
     if ns.holds == []:

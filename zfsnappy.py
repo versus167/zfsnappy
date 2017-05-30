@@ -31,7 +31,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='11 - 2017-05-11'
+VERSION='12 - 2017-05-30'
 
 import os
 import datetime, time
@@ -181,7 +181,7 @@ def main():
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
-    parser.add.argument('--dry-run',dest='dryrun',action='store_true','Trockentest ohne Veränderung am System')
+    parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
     if ns.holds == []:

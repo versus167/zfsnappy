@@ -94,10 +94,8 @@ def main():
             return 2
         return 0
     def checkminfree(tell=False):
-        
-        
-        ''' Erstmal 10 Sekunden warten, damit sich ZFS besinnen kann, wieviel Platz wirklich frei ist -
-        falls gerade vorher ein Snapshot gelöscht wurde ''' 
+        ''' Prüft den freien Space im FS '''
+               
         avai = os.popen('zfs list -Hp -o avail '+fs).readlines()
         used = os.popen('zfs list -Hp -o used '+fs).readlines()
         #print(avai,used)

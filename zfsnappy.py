@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+14 - 2017-07-27 - bei checkminfree wird jetzt auch der used-space in GB mit ausgegeben - vs.
 13 - 2017-07-06 - Anzahl Snaps werden dargestellt falls nicht deletemode = 3 - vs.
 12 - 2017-05-30 - --dry-run - Trockentest ohne löschen und snapshot - vs.
 11 - 2017-05-11 - -k --keep Anzahl Snapshots auf keinen Fall löschen - minfree spielt dabei keine Rolle 

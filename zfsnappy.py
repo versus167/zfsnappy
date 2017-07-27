@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+13 - 2017-07-06 - Anzahl Snaps werden dargestellt falls nicht deletemode = 3 - vs.
 12 - 2017-05-30 - --dry-run - Trockentest ohne löschen und snapshot - vs.
 11 - 2017-05-11 - -k --keep Anzahl Snapshots auf keinen Fall löschen - minfree spielt dabei keine Rolle 
 10 - 2017-02-19 - -r --recursion hinzugefügt - fs die nicht gemounted sind oder die Eigenschaft sun.com:auto-snapshot=False haben
@@ -31,7 +32,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='12 - 2017-05-30'
+VERSION='13 - 2017-07-06'
 
 import os
 import datetime, time
@@ -214,6 +215,7 @@ def main():
         # 1. Liste der vorhanden Snapshots
         listesnaps = getsnaplist()
         snapcount = len(listesnaps)
+        print(fs,'Snapshots vor dem Start:',snapcount)
         vgl = fs+'@'+ns.prefix+'_'
         l = len(vgl)
         
@@ -266,7 +268,10 @@ def main():
                 if checkminfree(True):
                     takeSnapshot()
                     break
-    
+        
+        listesnaps = getsnaplist()
+        snapcount = len(listesnaps)
+        print(fs,'Snapshots nach Durchlauf:',snapcount)
     print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Stop')
 if __name__ == '__main__':
     a = main()

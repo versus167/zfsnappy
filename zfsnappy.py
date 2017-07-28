@@ -107,7 +107,7 @@ def main():
         r = int(refe[0].strip('\n'))
         perc = a/(a+u)
         if tell:
-            print('free %.2f%% %.2fGB, used %.2fGB, referenced dds %.2fGB' % (perc*100,a/(1024*1024*1024),u/(1024*1024*1024),r/(1024*1024*1024)))
+            print('free %.2f%% %.2fGB, used %.2fGB, referenced %.2fGB' % (perc*100,a/(1024*1024*1024),u/(1024*1024*1024),r/(1024*1024*1024)))
         if  perc <= ns.minfree/100:
             print('prozentual zu wenig frei - %.2f%% < ' % (perc*100,),ns.minfree,'%')
             return False

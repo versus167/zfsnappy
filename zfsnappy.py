@@ -144,7 +144,7 @@ def main():
             aus = os.popen(cmd)
             for j in aus:
                 print(j)
-        time.sleep(10) 
+        time.sleep(15) # sleep auf 15 Sekunden, da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
         aus = os.popen('zfs list -H -r -t snapshot -o name '+fs).readlines()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben

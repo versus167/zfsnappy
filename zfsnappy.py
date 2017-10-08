@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+15 - 2017-10-08 - sleep nach destroy erhöht auf 20 Sekunden, damit ZFS mehr Zeit hat zu löschen - vs.
 14 - 2017-07-28 - bei checkminfree wird jetzt auch der used-und referenced space in GB mit ausgegeben - vs.
 13 - 2017-07-06 - Anzahl Snaps werden dargestellt falls nicht deletemode = 3 - vs.
 12 - 2017-05-30 - --dry-run - Trockentest ohne löschen und snapshot - vs.
@@ -144,7 +145,7 @@ def main():
             aus = os.popen(cmd)
             for j in aus:
                 print(j)
-        time.sleep(15) # sleep auf 15 Sekunden, da manchmal das löschen im zfs doch länger dauert
+        time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
         aus = os.popen('zfs list -H -r -t snapshot -o name '+fs).readlines()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben

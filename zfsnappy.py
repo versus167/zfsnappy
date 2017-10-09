@@ -34,7 +34,7 @@ Todo:
 
 '''
 APPNAME='zfsnappy'
-VERSION='14 - 2017-07-28'
+VERSION='15 - 2017-10-08'
 
 import os
 import datetime, time

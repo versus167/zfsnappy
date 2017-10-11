@@ -29,7 +29,7 @@ Todo:
 
 
   - Der Code ist zu säubern...
-
+    - popen durch subprocess.run ersetzen
   
 
 '''

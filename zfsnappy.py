@@ -36,7 +36,7 @@ Todo:
 APPNAME='zfsnappy'
 VERSION='15 - 2017-10-08'
 
-import os
+import subprocess, shlex
 import datetime, time
 import argparse, sys
 
@@ -77,21 +77,18 @@ def main():
     def checkfs(fsys):
         ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
         - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
-        mounted = os.popen('zfs get -H mounted '+fsys).readlines()
-        try:
-            if mounted[0].split('\t')[2] == 'yes':
-                # dann alles io
-                pass
-            else:
-                if ns.verbose: 
-                    print(fsys,'ist nicht gemounted!')
-                return 1
-        except:
-            if ns.verbose:
-                print(fsys,'ist nicht gemounted!')
+        ret = subprocess.run(['zfs','get','-H','mounted',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+        ret.check_returncode()
+        out = ret.stdout.split('\t')
+        if out[2] == 'yes':
+            pass
+        else: 
+            print(fsys,'ist nicht gemounted!')
             return 1
-        autosnapshot = os.popen('zfs get -H com.sun:auto-snapshot '+fsys).readlines()
-        if autosnapshot[0].split('\t')[2].lower() == 'false':
+        ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+        ret.check_returncode()
+        autosnapshot = ret.stdout.split('\t')
+        if autosnapshot[2].lower() == 'false':
             if ns.verbose:
                 print(fsys,'com.sun:auto-snapshot = False')
             return 2
@@ -99,13 +96,13 @@ def main():
     def checkminfree(tell=False):
         ''' Prüft den freien Space im FS '''
                
-        avai = os.popen('zfs list -Hp -o avail '+fs).readlines()
-        used = os.popen('zfs list -Hp -o used '+fs).readlines()
-        refe = os.popen('zfs list -Hp -o referenced '+fs).readlines()
-        #print(avai,used)
-        a = int(avai[0].strip('\n'))
-        u = int(used[0].strip('\n'))
-        r = int(refe[0].strip('\n'))
+        avai = subprocess.run(['zfs','list','-Hp','-o','avail',fs],stdout=subprocess.PIPE,universal_newlines=True)
+        used = subprocess.run(['zfs','list','-Hp','-o','used',fs],stdout=subprocess.PIPE,universal_newlines=True)
+        refe = subprocess.run(['zfs','list','-Hp','-o','referenced',fs],stdout=subprocess.PIPE,universal_newlines=True)
+         #print(avai,used)
+        a = int(avai.stdout.strip('\n'))
+        u = int(used.stdout.strip('\n'))
+        r = int(refe.stdout.strip('\n'))
         perc = a/(a+u)
         if tell:
             print('free %.3f%% %.3f GB, used %.3f GB, referenced %.3f GB' % (perc*100,a/(1024*1024*1024),u/(1024*1024*1024),r/(1024*1024*1024)))
@@ -124,9 +121,8 @@ def main():
         if ns.dryrun:
             pass
         else:
-            aus = os.popen(cmd)
-            for j in aus:
-                print(j)
+            aus = subprocess.run(shlex.split(cmd))
+            aus.check_returncode()
     def destroySnapshot(name):
         global snapcount # Ausnahmsweise...
         if ns.dm == 3:
@@ -138,22 +134,24 @@ def main():
             return
         cmd = 'zfs destroy '+name
         print(cmd)
+        args = shlex.split(cmd)
         snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
         if ns.dryrun:
             pass
         else:
-            aus = os.popen(cmd)
-            for j in aus:
-                print(j)
+            aus = subprocess.run(args)
+            aus.check_returncode()
         time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
-        aus = os.popen('zfs list -H -r -t snapshot -o name '+fs).readlines()
+        arg = shlex.split('zfs list -H -r -t snapshot -o name '+fs)
+        aus = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
+        aus.check_returncode()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
         vgl = fs+'@'+ns.prefix+'_'
         l = len(vgl)
         listesnaps = {}
-        for i in aus:
-            snp = i.strip('\n')
+        for i in aus.stdout.split('\n'):
+            snp = i
             if snp[0:l] == vgl:
                 listesnaps[snp] = False
 #         for i in sorted(listesnaps):
@@ -197,8 +195,10 @@ def main():
     fslist = []
     if ns.recursion:
         # dann sammeln wir mal die Filesysteme
-        liste = os.popen('zfs list -H -r '+ns.zfsfs).readlines()
-        for i in liste:
+        arg = shlex.split('zfs list -H -r '+ns.zfsfs)
+        liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
+        liste.check_returncode()
+        for i in liste.stdout.split('\n'):
             fslist.append(i.split('\t')[0])
         
     else:

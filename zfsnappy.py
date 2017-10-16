@@ -79,7 +79,8 @@ def main():
         ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
         - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
         ret = subprocess.run(['zfs','get','-H','mounted',fsys],stdout=subprocess.PIPE,universal_newlines=True)
-        ret.check_returncode()
+        if ret.returncode > 0:
+            return 1
         out = ret.stdout.split('\t')
         if out[2] == 'yes':
             pass
@@ -87,7 +88,8 @@ def main():
             print(fsys,'ist nicht gemounted!')
             return 1
         ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
-        ret.check_returncode()
+        if ret.returncode > 0:
+            return 2
         autosnapshot = ret.stdout.split('\t')
         if autosnapshot[2].lower() == 'false':
             if ns.verbose:

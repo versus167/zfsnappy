@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-16 - - os.popen durch subprocess.run ersetzt
+16 - 2017-10-18 - os.popen durch subprocess.run ersetzt - vs.
 15 - 2017-10-08 - sleep nach destroy erhöht auf 20 Sekunden, damit ZFS mehr Zeit hat zu löschen - vs.
 14 - 2017-07-28 - bei checkminfree wird jetzt auch der used-und referenced space in GB mit ausgegeben - vs.
 13 - 2017-07-06 - Anzahl Snaps werden dargestellt falls nicht deletemode = 3 - vs.

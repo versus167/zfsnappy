@@ -30,8 +30,8 @@ Todo:
 
 
   - Der Code ist zu säubern...
-    - popen durch subprocess.run ersetzen
-  
+    - 
+      vielleicht sollten wir die Intervalle anders zählen -> Immer vom letzten Treffer wieder neu zählen?!
 
 '''
 APPNAME='zfsnappy'

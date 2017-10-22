@@ -35,7 +35,7 @@ Todo:
       
 
 '''
-from calendar import day
+
 APPNAME='zfsnappy'
 VERSION='17 - 2017-10-22'
 

@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+17 - 2017-10-22 - Intverallberechnung geändert, um Probleme bei stark unregelmäßigen Aufrufen zu umgehen - vs.
 16 - 2017-10-18 - os.popen durch subprocess.run ersetzt - vs.
 15 - 2017-10-08 - sleep nach destroy erhöht auf 20 Sekunden, damit ZFS mehr Zeit hat zu löschen - vs.
 14 - 2017-07-28 - bei checkminfree wird jetzt auch der used-und referenced space in GB mit ausgegeben - vs.
@@ -31,11 +32,12 @@ Todo:
 
   - Der Code ist zu säubern...
     - 
-      vielleicht sollten wir die Intervalle anders zählen -> Immer vom letzten Treffer wieder neu zählen?!
+      
 
 '''
+from calendar import day
 APPNAME='zfsnappy'
-VERSION='16 - '
+VERSION='17 - 2017-10-22'
 
 import subprocess, shlex
 import datetime, time
@@ -51,8 +53,8 @@ class intervall(object):
         '''
         self.intervalllaenge = int(intervalllaenge)
         self.holdversions = holdversions
-        self.intervalls = {}
-        self.intervallnraktuell = 0
+        self.intervallnraktuell = -1
+        
     def checkday(self,day):
         '''
         Hier soll ein Tag übergeben werden.
@@ -65,14 +67,17 @@ class intervall(object):
         i = int(int(day)/int(self.intervalllaenge))
         if i >= self.holdversions:
             return False
-        try:
-            if self.intervalls[i] == True:
-                return False
-        except:
-            self.intervalls[i] = True
-        self.intervallnraktuell = i
-        return True
-    
+        if self.intervallnraktuell == -1:
+            self.intervallnraktuell = i
+            self.laststrike = day
+            return True
+        if (self.laststrike - day)>= self.intervalllaenge:
+            self.intervallnraktuell -=1
+            self.laststrike = day
+            return True
+        else:
+            return False
+
 
 def main():
     def checkfs(fsys):

@@ -63,7 +63,6 @@ class intervall(object):
         Sonst false.
         Auch wenn außerhalb der holdversions
         '''
-    
         i = int(int(day)/int(self.intervalllaenge))
         if i >= self.holdversions:
             return False
@@ -239,7 +238,7 @@ def main():
             
             dt = datetime.datetime.strptime(dstring,'%Y-%m-%dT%H:%M:%S.%f')
             tmp = heute - dt
-            chkday = tmp.days 
+            chkday = tmp.days
             if ns.verbose:
                 print(time.strftime("%Y-%m-%d %H:%M:%S"),i, chkday,'days')
             hold = False

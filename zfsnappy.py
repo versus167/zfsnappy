@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+18 - - Diff-Berechnung geändert, damit egal wird zu welcher Uhrzeit das Script aufgerufen wird - vs.
 17 - 2017-10-22 - Intervallberechnung geändert, um Probleme bei stark unregelmäßigen Aufrufen zu umgehen + log-Ausgaben angepasst - vs.
 16 - 2017-10-18 - os.popen durch subprocess.run ersetzt - vs.
 15 - 2017-10-08 - sleep nach destroy erhöht auf 20 Sekunden, damit ZFS mehr Zeit hat zu löschen - vs.
@@ -37,7 +38,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='17 - 2017-10-22'
+VERSION='18 - '
 
 import subprocess, shlex
 import datetime, time
@@ -234,9 +235,11 @@ def main():
         for i in sorted(listesnaps): # Vom ältesten zum neuesten
             
             #erstmal die difftage zu heute ermitteln
-            dstring = i[l:]
+            dstring = i[l:l+10] # damit wird nun noch mit dem glatten Datum verglichen - ohne Stunde/Minute
+            # Damit sollte es keine Rolle mehr spielen, wann das Script an einem Tag aufgerufen wird - Die diff-Tage
+            # sind immer gleich
             
-            dt = datetime.datetime.strptime(dstring,'%Y-%m-%dT%H:%M:%S.%f')
+            dt = datetime.datetime.strptime(dstring,'%Y-%m-%d')
             tmp = heute - dt
             chkday = tmp.days
             if ns.verbose:

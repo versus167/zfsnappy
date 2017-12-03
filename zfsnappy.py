@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-18 - - Diff-Berechnung geändert, damit egal wird zu welcher Uhrzeit das Script aufgerufen wird - vs.
+18 - 2017-12-03 - Diff-Berechnung geändert, damit egal wird zu welcher Uhrzeit das Script aufgerufen wird - vs.
 17 - 2017-10-22 - Intervallberechnung geändert, um Probleme bei stark unregelmäßigen Aufrufen zu umgehen + log-Ausgaben angepasst - vs.
 16 - 2017-10-18 - os.popen durch subprocess.run ersetzt - vs.
 15 - 2017-10-08 - sleep nach destroy erhöht auf 20 Sekunden, damit ZFS mehr Zeit hat zu löschen - vs.
@@ -38,7 +38,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='18 - '
+VERSION='18 - 2017-12-03'
 
 import subprocess, shlex
 import datetime, time

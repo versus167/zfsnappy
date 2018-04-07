@@ -206,7 +206,7 @@ def main():
         arg = shlex.split('zfs list -H -r '+ns.zfsfs)
         liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
         liste.check_returncode()
-        for i in liste.stdout.split('\n'):
+        for i in liste.stdout.split('\n')[:-1]:
             fslist.append(i.split('\t')[0])
         
     else:

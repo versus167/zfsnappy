@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+19 - 2018-04-08 - Rekursion korrigiert - jetzt können auch Volumes behandelt werden - vs.
 18 - 2017-12-03 - Diff-Berechnung geändert, damit egal wird zu welcher Uhrzeit das Script aufgerufen wird - vs.
 17 - 2017-10-22 - Intervallberechnung geändert, um Probleme bei stark unregelmäßigen Aufrufen zu umgehen + log-Ausgaben angepasst - vs.
 16 - 2017-10-18 - os.popen durch subprocess.run ersetzt - vs.
@@ -83,14 +84,14 @@ def main():
     def checkfs(fsys):
         ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
         - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
-        ret = subprocess.run(['zfs','get','-H','mounted',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+        ret = subprocess.run(['zfs','get','-H','type',fsys],stdout=subprocess.PIPE,universal_newlines=True)
         if ret.returncode > 0:
             return 1
         out = ret.stdout.split('\t')
-        if out[2] == 'yes':
+        if out[2] == 'filesystem' or out[2] == 'volume':
             pass
         else: 
-            print(time.strftime("%Y-%m-%d %H:%M:%S"),fsys,'ist nicht gemounted!')
+            print(time.strftime("%Y-%m-%d %H:%M:%S"),fsys,'ist nicht geeignet für Snapshots!')
             return 1
         ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
         if ret.returncode > 0:

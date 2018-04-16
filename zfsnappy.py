@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+20 - 2018-04-16 - Korrektur der Intervalle bei Recursion - vs.
 19 - 2018-04-08 - Rekursion korrigiert - jetzt können auch Volumes behandelt werden - vs.
 18 - 2017-12-03 - Diff-Berechnung geändert, damit egal wird zu welcher Uhrzeit das Script aufgerufen wird - vs.
 17 - 2017-10-22 - Intervallberechnung geändert, um Probleme bei stark unregelmäßigen Aufrufen zu umgehen + log-Ausgaben angepasst - vs.
@@ -194,12 +195,7 @@ def main():
     parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
-    if ns.holds == []:
-        ns.holds.append((1,1))
-    inters = []
-    for i in ns.holds:
-        inter = intervall(i[0],i[1])
-        inters.append(inter)
+   
     # 0.1 Cheock ob das FS gemounted ist
     fslist = []
     if ns.recursion:
@@ -212,9 +208,16 @@ def main():
         
     else:
         fslist.append(ns.zfsfs)
-    
+    if ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 aös minimum
+        ns.holds.append((1,1))
     for fs in fslist:
+        
         print(time.strftime("%Y-%m-%d %H:%M:%S"),'Aktuelles Filesystem:',fs)
+       
+        inters = []
+        for i in ns.holds:
+            inter = intervall(i[0],i[1])
+            inters.append(inter)
         ret =  checkfs(fs)
         if ret != 0:
             continue

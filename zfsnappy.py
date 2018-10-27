@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+21 - 2018-10-27 - neue Option -x (--no_snapshot) - damit wird kein neuer Snapshot erstellt, aber trotzdem gelöscht - vs.
 20 - 2018-04-16 - Korrektur der Intervalle bei Recursion - vs.
 19 - 2018-04-08 - Rekursion korrigiert - jetzt können auch Volumes behandelt werden - vs.
 18 - 2017-12-03 - Diff-Berechnung geändert, damit egal wird zu welcher Uhrzeit das Script aufgerufen wird - vs.
@@ -40,7 +41,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='20 - 2018-04-16'
+VERSION='21 - 2018-10-27'
 
 import subprocess, shlex
 import datetime, time
@@ -124,6 +125,8 @@ def main():
             return False
         return True
     def takeSnapshot():
+        if ns.no_snapshot:
+            return
         aktuell = datetime.datetime.now()
         snapname = fs+'@'+ns.prefix+'_'+aktuell.isoformat() 
         cmd = 'zfs snapshot '+snapname
@@ -192,6 +195,7 @@ def main():
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
+    parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
     parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
     global snapcount
     ns = parser.parse_args(sys.argv[1:])

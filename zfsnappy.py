@@ -29,6 +29,11 @@ Created on 10.12.2016
 2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
 1 - 2016-12-10 - Erste lauffähige Version - vs.
 
+Hinweis:
+
+Bei Verwendung in der crontab ist diese PFadangabe einzufügen:
+
+PATH=/usr/bin:/bin:/sbin
 
 
 Todo:

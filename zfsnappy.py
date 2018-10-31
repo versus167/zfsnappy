@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+22 - 2018-10-31 - fix für snaphots mit hold - vs.
 21 - 2018-10-27 - neue Option -x (--no_snapshot) - damit wird kein neuer Snapshot erstellt, aber trotzdem gelöscht - vs.
 20 - 2018-04-16 - Korrektur der Intervalle bei Recursion - vs.
 19 - 2018-04-08 - Rekursion korrigiert - jetzt können auch Volumes behandelt werden - vs.
@@ -151,15 +152,18 @@ def main():
                 print(time.strftime("%Y-%m-%d %H:%M:%S"),name,'wird nicht gelöscht wegen keepsnapshots',ns.keepsnapshots,'>= snapcount',snapcount)
             return
         cmd = 'zfs destroy '+name
-        print(time.strftime("%Y-%m-%d %H:%M:%S"),cmd)
         args = shlex.split(cmd)
-        snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
+        
         if ns.dryrun:
             pass
         else:
-            aus = subprocess.run(args)
-            aus.check_returncode()
-        time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
+            aus = subprocess.run(args,stderr=subprocess.PIPE,encoding='UTF-8')
+            if aus.returncode > 0:
+                print(time.strftime("%Y-%m-%d %H:%M:%S"),'Problem beim Löschen:',aus.stderr)
+            else:
+                print(time.strftime("%Y-%m-%d %H:%M:%S"),cmd)
+                snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
+                time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
         arg = shlex.split('zfs list -H -r -t snapshot -o name '+fs)
         aus = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)

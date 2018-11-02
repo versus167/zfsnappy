@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+23 - 2018-11-02 - Fix Kompatibilität zu Python 3.5 (encoding) - vs.
 22 - 2018-10-31 - fix für snaphots mit hold - vs.
 21 - 2018-10-27 - neue Option -x (--no_snapshot) - damit wird kein neuer Snapshot erstellt, aber trotzdem gelöscht - vs.
 20 - 2018-04-16 - Korrektur der Intervalle bei Recursion - vs.
@@ -26,7 +27,7 @@ Created on 10.12.2016
 6 - 2017-01-30 - default für -i auf 1 1 gesetzt - vs. 
 5 - 2017-01-28 - sleep(10) nach destroy eingebaut, damit zfs nachkommt + bugfix - vs.
 4 - 2017-01-24 - Jetzt mit Check des freespace in GB - option -s - vs. 
-3 - 2016-12-28 - Check ob das Filesystem gemoountet ist - vs.
+3 - 2016-12-28 - Check ob das Filesystem gemountet ist - vs.
 2 - 2016-12-24 - Mit Ausgabe der Parameter für das Log - vs.
 1 - 2016-12-10 - Erste lauffähige Version - vs.
 
@@ -47,7 +48,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='22 - 2018-10-31'
+VERSION='23 - 2018-11-02'
 
 import subprocess, shlex
 import datetime, time
@@ -157,9 +158,9 @@ def main():
         if ns.dryrun:
             pass
         else:
-            aus = subprocess.run(args,stderr=subprocess.PIPE,encoding='UTF-8')
+            aus = subprocess.run(args,stderr=subprocess.PIPE)
             if aus.returncode > 0:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),'Problem beim Löschen:',aus.stderr)
+                print(time.strftime("%Y-%m-%d %H:%M:%S"),'Problem beim Löschen:',aus.stderr.encode('UTF-8'))
             else:
                 print(time.strftime("%Y-%m-%d %H:%M:%S"),cmd)
                 snapcount = snapcount -1 # Jetzt ist wirklich einer weniger

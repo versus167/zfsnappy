@@ -47,7 +47,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='21 - 2018-10-27'
+VERSION='22 - 2018-10-31'
 
 import subprocess, shlex
 import datetime, time

@@ -160,7 +160,7 @@ def main():
         else:
             aus = subprocess.run(args,stderr=subprocess.PIPE)
             if aus.returncode > 0:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),'Problem beim Löschen:',aus.stderr.encode('UTF-8'))
+                print(time.strftime("%Y-%m-%d %H:%M:%S"),'Problem beim Löschen:',aus.stderr.decode('UTF-8'))
             else:
                 print(time.strftime("%Y-%m-%d %H:%M:%S"),cmd)
                 snapcount = snapcount -1 # Jetzt ist wirklich einer weniger

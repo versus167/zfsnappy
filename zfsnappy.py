@@ -193,7 +193,7 @@ def main():
     parser.add_argument("-f","--filesystem",dest='zfsfs',
                       help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
     parser.add_argument('-m','--minfree',dest='minfree',
-                      help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent - default 20%',type=int, default=20)
+                      help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent - default 20%%',type=int, default=20)
     parser.add_argument('-s','--spacefree',dest='freespace',
                         help='Mindestens freier Speicher in GB - default ausgeschalten',type=int,default=0)
     parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')

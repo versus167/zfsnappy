@@ -1,0 +1,4 @@
+#!/bin/bash
+cp zfsnappy.py ./zfsnappy/usr/bin/zfsnappy
+dpkg-deb --build zfsnappy
+

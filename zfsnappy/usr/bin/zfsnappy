@@ -5,7 +5,6 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-24 - 2020-01-24 - mit deb-Paket - vs.
 23 - 2018-11-02 - Fix Kompatibilität zu Python 3.5 (encoding) - vs.
 22 - 2018-10-31 - fix für snaphots mit hold - vs.
 21 - 2018-10-27 - neue Option -x (--no_snapshot) - damit wird kein neuer Snapshot erstellt, aber trotzdem gelöscht - vs.
@@ -49,7 +48,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='24 - 2020-01-24'
+VERSION='23 - 2018-11-02'
 
 import subprocess, shlex
 import datetime, time

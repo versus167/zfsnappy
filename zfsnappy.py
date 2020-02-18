@@ -50,10 +50,12 @@ Todo:
 
 APPNAME='zfsnappy'
 VERSION='24 - 2020-01-24'
+LOGNAME=APPNAME
 
 import subprocess, shlex
 import datetime, time
 import argparse, sys
+import logging
 
 class intervall(object):
     '''
@@ -182,8 +184,8 @@ def main():
 #             print(i)
         
         return listesnaps
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Start')
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),'Aufrufparameter:',' '.join(sys.argv[1:]))
+    
+    
     parser = argparse.ArgumentParser()
     defaultintervall = []
     
@@ -208,9 +210,20 @@ def main():
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
     parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
     parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
+    parser.add_argument('--debug',dest="debugging",help='Debug-Level-Ausgaben',default=False,action='store_true')
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
-   
+    log = logging.getLogger(LOGNAME)
+    if ns.debugging:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh = logging.StreamHandler()
+    fh.setFormatter(formatter)
+    log.addHandler(fh)
+    log.info(f'{APPNAME} {VERSION} ************************** Start')
+    print(time.strftime("%Y-%m-%d %H:%M:%S"),'Aufrufparameter:',' '.join(sys.argv[1:]))
     # 0.1 Cheock ob das FS gemounted ist
     fslist = []
     if ns.recursion:

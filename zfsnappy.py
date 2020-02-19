@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2020.25 - 2020-02.....
 24 - 2020-01-24 - mit deb-Paket - vs.
 23 - 2018-11-02 - Fix Kompatibilität zu Python 3.5 (encoding) - vs.
 22 - 2018-10-31 - fix für snaphots mit hold - vs.
@@ -49,7 +50,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='24 - 2020-01-24'
+VERSION='2020.25'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -120,13 +121,13 @@ def main():
         avai = subprocess.run(['zfs','list','-Hp','-o','avail',fs],stdout=subprocess.PIPE,universal_newlines=True)
         used = subprocess.run(['zfs','list','-Hp','-o','used',fs],stdout=subprocess.PIPE,universal_newlines=True)
         refe = subprocess.run(['zfs','list','-Hp','-o','referenced',fs],stdout=subprocess.PIPE,universal_newlines=True)
-         #print(avai,used)
+
         a = int(avai.stdout.strip('\n'))
         u = int(used.stdout.strip('\n'))
         r = int(refe.stdout.strip('\n'))
         perc = a/(a+u)
         if tell:
-            print(time.strftime("%Y-%m-%d %H:%M:%S"),'free %.3f%% %.3f GB, used %.3f GB, referenced %.3f GB' % (perc*100,a/(1024*1024*1024),u/(1024*1024*1024),r/(1024*1024*1024)))
+            log.info(f'free {perc*100:.3f}% {a/(1024*1024*1024):.3f} GB, used {u/(1024*1024*1024):.3f} GB, referenced {r/(1024*1024*1024):.3f} GB')
         if  perc <= ns.minfree/100:
             print(time.strftime("%Y-%m-%d %H:%M:%S"),'prozentual zu wenig frei - %.3f%% < ' % (perc*100,),ns.minfree,'%')
             return False
@@ -223,7 +224,7 @@ def main():
     fh.setFormatter(formatter)
     log.addHandler(fh)
     log.info(f'{APPNAME} {VERSION} ************************** Start')
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),'Aufrufparameter:',' '.join(sys.argv[1:]))
+    log.debug(ns)
     # 0.1 Cheock ob das FS gemounted ist
     fslist = []
     if ns.recursion:
@@ -240,7 +241,7 @@ def main():
         ns.holds.append((1,1))
     for fs in fslist:
         
-        print(time.strftime("%Y-%m-%d %H:%M:%S"),'Aktuelles Filesystem:',fs)
+        log.info(f'Aktuelles Filesystem: {fs}')
        
         inters = []
         for i in ns.holds:
@@ -259,7 +260,7 @@ def main():
         # 1. Liste der vorhanden Snapshots
         listesnaps = getsnaplist()
         snapcount = len(listesnaps)
-        print(time.strftime("%Y-%m-%d %H:%M:%S"),fs,'Snapshots vor dem Start:',snapcount)
+        log.info(f'{fs} Snapshots vor dem Start: {snapcount}')
         vgl = fs+'@'+ns.prefix+'_'
         l = len(vgl)
         

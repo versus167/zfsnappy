@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2020.25 - 2020-02.....
+2020.25 - 2020-02.21 - logging umgestellt - vs.
 24 - 2020-01-24 - mit deb-Paket - vs.
 23 - 2018-11-02 - Fix Kompatibilität zu Python 3.5 (encoding) - vs.
 22 - 2018-10-31 - fix für snaphots mit hold - vs.
@@ -104,15 +104,14 @@ def main():
         if out[2] == 'filesystem' or out[2] == 'volume':
             pass
         else: 
-            print(time.strftime("%Y-%m-%d %H:%M:%S"),fsys,'ist nicht geeignet für Snapshots!')
+            log.info(f'{fsys} ist nicht geeignet für Snapshots!')
             return 1
         ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
         if ret.returncode > 0:
             return 2
         autosnapshot = ret.stdout.split('\t')
         if autosnapshot[2].lower() == 'false':
-            if ns.verbose:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),fsys,'com.sun:auto-snapshot = False')
+            log.debug(f'{fsys} com.sun:auto-snapshot = False')
             return 2
         return 0
     def checkminfree(tell=False):
@@ -129,10 +128,10 @@ def main():
         if tell:
             log.info(f'free {perc*100:.3f}% {a/(1024*1024*1024):.3f} GB, used {u/(1024*1024*1024):.3f} GB, referenced {r/(1024*1024*1024):.3f} GB')
         if  perc <= ns.minfree/100:
-            print(time.strftime("%Y-%m-%d %H:%M:%S"),'prozentual zu wenig frei - %.3f%% < ' % (perc*100,),ns.minfree,'%')
+            log.info(f'prozentual zu wenig frei - {perc*100:.3f}% < {ns.minfree}%')
             return False
         if a/(1024*1024*1024) <= ns.freespace:
-            print(time.strftime("%Y-%m-%d %H:%M:%S"),'zu wenig GB frei - %.3f < ' % (a/(1024*1024*1024),),ns.freespace,'GB')
+            log.info(f'zu wenig GB frei - {a/(1024*1024*1024):.3f} < {ns.freespace} GB')
             return False
         return True
     def takeSnapshot():
@@ -141,7 +140,7 @@ def main():
         aktuell = datetime.datetime.now()
         snapname = fs+'@'+ns.prefix+'_'+aktuell.isoformat() 
         cmd = 'zfs snapshot '+snapname
-        print(time.strftime("%Y-%m-%d %H:%M:%S"),cmd)
+        log.info(cmd)
         if ns.dryrun:
             pass
         else:
@@ -153,8 +152,7 @@ def main():
             # dm ==3 -> nichts wird gelöscht - im Zweifel wird halt dann kein Snapshot erstellt
             return
         if ns.keepsnapshots >= snapcount:
-            if ns.verbose:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),name,'wird nicht gelöscht wegen keepsnapshots',ns.keepsnapshots,'>= snapcount',snapcount)
+            log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount}')
             return
         cmd = 'zfs destroy '+name
         args = shlex.split(cmd)
@@ -164,9 +162,9 @@ def main():
         else:
             aus = subprocess.run(args,stderr=subprocess.PIPE)
             if aus.returncode > 0:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),'Problem beim Löschen:',aus.stderr.decode('UTF-8'))
+                log.info(f'Problem beim Löschen: {aus.stderr.decode("UTF-8")}')
             else:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),cmd)
+                log.info(cmd)
                 snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
                 time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
@@ -181,8 +179,6 @@ def main():
             snp = i
             if snp[0:l] == vgl:
                 listesnaps[snp] = False
-#         for i in sorted(listesnaps):
-#             print(i)
         
         return listesnaps
     
@@ -211,11 +207,10 @@ def main():
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
     parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
     parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
-    parser.add_argument('--debug',dest="debugging",help='Debug-Level-Ausgaben',default=False,action='store_true')
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
     log = logging.getLogger(LOGNAME)
-    if ns.debugging:
+    if ns.verbose:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
@@ -276,18 +271,16 @@ def main():
             tmp = heute - dt
             chkday = tmp.days
             if ns.verbose:
-                print(time.strftime("%Y-%m-%d %H:%M:%S"),i, chkday,'days')
+                log.info(f'{i} {chkday} days')
             hold = False
             if chkday <= ns.nodeletedays and ns.nodeletedays>0:
                 if ns.verbose:
-                    print(time.strftime("%Y-%m-%d %H:%M:%S"),'Hold für ',i,'wegen "nodeletedays"')
-                #print(i,'in days',chkday)
+                    log.info(f'Hold für {i} wegen "nodeletedays"')
                 hold = True
             else:
                 for x in inters:
                     if x.checkday(chkday):
-                        if ns.verbose:
-                            print(time.strftime("%Y-%m-%d %H:%M:%S"),'Hold für ',i,' wegen "Intervall" days:',x.intervalllaenge,'Anzahl:',x.holdversions ,'Intervallnummer:',x.intervallnraktuell+1)
+                        log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
                         hold = True
                         
                         
@@ -295,22 +288,21 @@ def main():
             if hold == False:
                 
                 if checkminfree() == False or ns.dm == 2:
-                    if ns.verbose:
-                        if ns.dm == 2:
-                            print(time.strftime("%Y-%m-%d %H:%M:%S"),'delete wegen deletemode = 2')
-                        else:
-                            print(time.strftime("%Y-%m-%d %H:%M:%S"),'delete wegen freespace')
+                    
+                    if ns.dm == 2:
+                        log.debug('delete wegen deletemode = 2')
+                    else:
+                        log.debug('delete wegen freespace')
                     destroySnapshot(i)
         # Als letztes: Snapshot erstellen
         if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
             takeSnapshot()
         else:
             # Dann müssen jetzt noch mehr snaps gelöscht werden - Vom ältesten zum neuesten
-            print(time.strftime("%Y-%m-%d %H:%M:%S"),'Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
+            log.info('Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
             listesnaps = getsnaplist()
             for i in sorted(listesnaps):
-                if ns.verbose:
-                    print(time.strftime("%Y-%m-%d %H:%M:%S"),'delete wegen freespace')
+                log.debug('delete wegen freespace')
                 destroySnapshot(i)
                 if checkminfree(True):
                     takeSnapshot()
@@ -318,7 +310,7 @@ def main():
         
         listesnaps = getsnaplist()
         snapcount = len(listesnaps)
-        print(time.strftime("%Y-%m-%d %H:%M:%S"),fs,'Snapshots nach Durchlauf:',snapcount)
-    print(time.strftime("%Y-%m-%d %H:%M:%S"),APPNAME, VERSION,' ************************** Stop')
+        log.info(f'{fs} Snapshots nach Durchlauf: {snapcount}')
+    log.info(f'{APPNAME} {VERSION} ************************** Stop')
 if __name__ == '__main__':
     a = main()

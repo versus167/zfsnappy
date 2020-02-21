@@ -1,9 +1,0 @@
-Package: zfsnappy
-Version: 24
-Section: server
-Priority: optional
-Architecture: all
-Essential: no
-Installed-size: 14
-Maintainer: Volker Süß
-Description: ZFS Snapshots erstellen und automatisiert wieder löschen

@@ -1,0 +1,9 @@
+Package: zfsnappy
+Version: 2020.25
+Section: server
+Priority: optional
+Architecture: all
+Essential: no
+Installed-size: 14
+Maintainer: Volker Süß
+Description: ZFS Snapshots erstellen und automatisiert wieder löschen

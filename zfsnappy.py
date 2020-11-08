@@ -220,7 +220,7 @@ def main():
     log.addHandler(fh)
     log.info(f'{APPNAME} {VERSION} ************************** Start')
     log.debug(ns)
-    # 0.1 Cheock ob das FS gemounted ist
+    # 0.1 Check ob das FS gemounted ist
     fslist = []
     if ns.recursion:
         # dann sammeln wir mal die Filesysteme
@@ -232,7 +232,7 @@ def main():
         
     else:
         fslist.append(ns.zfsfs)
-    if ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 aös minimum
+    if ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
         ns.holds.append((1,1))
     for fs in fslist:
         

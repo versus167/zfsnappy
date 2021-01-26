@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.26 - 2021.01.26 - owner auf root - vs.
 2020.25 - 2020-02.21 - logging umgestellt - vs.
 24 - 2020-01-24 - mit deb-Paket - vs.
 23 - 2018-11-02 - Fix Kompatibilität zu Python 3.5 (encoding) - vs.
@@ -50,7 +51,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='2020.25'
+VERSION='2021.26'
 LOGNAME=APPNAME
 
 import subprocess, shlex

@@ -5,6 +5,8 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.27 - 2021-04-17 - Änderung Verhalten von keep/nodeletedays - Innerhalb der nodeletedays wird nur gelöscht,
+                       wenn minspace nicht ausreicht und keep nicht unterschritten - vs.
 2021.26 - 2021.01.26 - owner auf root - vs.
 2020.25 - 2020-02.21 - logging umgestellt - vs.
 24 - 2020-01-24 - mit deb-Paket - vs.
@@ -51,7 +53,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.26'
+VERSION='2021.27'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -147,14 +149,19 @@ def main():
         else:
             aus = subprocess.run(shlex.split(cmd))
             aus.check_returncode()
-    def destroySnapshot(name):
+    def destroySnapshot(name,chkday):
         global snapcount # Ausnahmsweise...
         if ns.dm == 3:
             # dm ==3 -> nichts wird gelöscht - im Zweifel wird halt dann kein Snapshot erstellt
             return
-        if ns.keepsnapshots >= snapcount:
-            log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount}')
-            return
+        if ns.nodeletedays >= chkday:
+            # Wir sind also in dem Bereich, wo die Snapshots erhalten bleiben sollen
+            if checkminfree(): # true = genug frei
+                log.debug(f'{name} wird nicht gelöscht, da noch genug Speicher frei und wir sind in nodeletedays')
+                return
+                if ns.keepsnapshots >= snapcount:
+                    log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount} innerhalb der nodeletedays {ns.nodeletedays}')
+                    return
         cmd = 'zfs destroy '+name
         args = shlex.split(cmd)
         
@@ -167,7 +174,7 @@ def main():
             else:
                 log.info(cmd)
                 snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
-                time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
+                time.sleep(ns.waittime) # sleep auf 20 Sekunden (Standard), da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
         arg = shlex.split('zfs list -H -r -t snapshot -o name '+fs)
         aus = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
@@ -184,7 +191,7 @@ def main():
         return listesnaps
     
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     defaultintervall = []
     
     parser.add_argument("-i", "--holdinterval", dest="holds",
@@ -193,21 +200,23 @@ def main():
     parser.add_argument("-f","--filesystem",dest='zfsfs',
                       help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
     parser.add_argument('-m','--minfree',dest='minfree',
-                      help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent - default 20%%',type=int, default=20)
+                      help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent',type=int, default=20)
     parser.add_argument('-s','--spacefree',dest='freespace',
                         help='Mindestens freier Speicher in GB - default ausgeschalten',type=int,default=0)
     parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
-    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3- es wird nichts gelöscht',
+    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3 - es wird nichts gelöscht',
                         default=1)
-    parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an denen regulär nichts gelöscht wird - nach freizuhaltendem Space wird trotzdem gelöscht',
-                        default=0)
+    parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an dem nichts gelöscht werden soll. Es sei denn der Speicher ist zu knapp und [keep] lässt löschen zu.',
+                        default=10)
     parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger')
     parser.set_defaults(verbose=False)
     parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
     parser.set_defaults(recursion=False)
-    parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
+    parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall innerhalb der NODELETEDAYS behalten',default=0)
     parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
     parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
+    parser.add_argument('--wait-time',dest='waittime',help='Wieviel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen, da ZFS asynchron löscht.',
+                        type=int,default=20)
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
     log = logging.getLogger(LOGNAME)
@@ -274,15 +283,15 @@ def main():
             if ns.verbose:
                 log.info(f'{i} {chkday} days')
             hold = False
-            if chkday <= ns.nodeletedays and ns.nodeletedays>0:
-                if ns.verbose:
-                    log.info(f'Hold für {i} wegen "nodeletedays"')
-                hold = True
-            else:
-                for x in inters:
-                    if x.checkday(chkday):
-                        log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
-                        hold = True
+#             if chkday <= ns.nodeletedays and ns.nodeletedays>0:
+#                 if ns.verbose:
+#                     log.info(f'Hold für {i} wegen "nodeletedays"')
+#                 hold = True
+#            else:
+            for x in inters:
+                if x.checkday(chkday):
+                    log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
+                    hold = True
                         
                         
             
@@ -294,7 +303,7 @@ def main():
                         log.debug('delete wegen deletemode = 2')
                     else:
                         log.debug('delete wegen freespace')
-                    destroySnapshot(i)
+                    destroySnapshot(i,chkday)
         # Als letztes: Snapshot erstellen
         if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
             takeSnapshot()

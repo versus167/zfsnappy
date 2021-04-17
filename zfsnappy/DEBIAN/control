@@ -1,5 +1,5 @@
 Package: zfsnappy
-Version: 2021.26
+Version: 2021.27
 Section: server
 Priority: optional
 Architecture: all

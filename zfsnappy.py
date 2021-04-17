@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+
 2021.26 - 2021.01.26 - owner auf root - vs.
 2020.25 - 2020-02.21 - logging umgestellt - vs.
 24 - 2020-01-24 - mit deb-Paket - vs.
@@ -167,7 +168,7 @@ def main():
             else:
                 log.info(cmd)
                 snapcount = snapcount -1 # Jetzt ist wirklich einer weniger
-                time.sleep(20) # sleep auf 20 Sekunden, da manchmal das löschen im zfs doch länger dauert
+                time.sleep(ns.waittime) # sleep auf 20 Sekunden (Standard), da manchmal das löschen im zfs doch länger dauert
     def getsnaplist():
         arg = shlex.split('zfs list -H -r -t snapshot -o name '+fs)
         aus = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
@@ -208,6 +209,8 @@ def main():
     parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall behalten',default=0)
     parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
     parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
+    parser.add_argument('--wait-time',dest='waittime',help='Wieivel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Standard 20 Sec. Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen',
+                        type=int,default=20)
     global snapcount
     ns = parser.parse_args(sys.argv[1:])
     log = logging.getLogger(LOGNAME)

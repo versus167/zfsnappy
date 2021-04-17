@@ -156,6 +156,7 @@ def main():
         if ns.nodeletedays >= chkday:
             # Wir sind also in dem Bereich, wo die Snapshots erhalten bleiben sollen
             if checkminfree(): # true = genug frei
+                log.debug(f'{name} wird nicht gelöscht, da noch genug Speicher frei und wir sind in nodeletedays')
                 return
                 if ns.keepsnapshots >= snapcount:
                     log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount} innerhalb der nodeletedays {ns.nodeletedays}')

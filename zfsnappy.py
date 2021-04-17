@@ -5,7 +5,8 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-
+2021.27 - 2021-04-17 - Änderung Verhalten von keep/nodeletedays - Innerhalb der nodeletedays wird nur gelöscht,
+                       wenn minspace nicht ausreicht und keep nicht unterschritten - vs.
 2021.26 - 2021.01.26 - owner auf root - vs.
 2020.25 - 2020-02.21 - logging umgestellt - vs.
 24 - 2020-01-24 - mit deb-Paket - vs.
@@ -52,7 +53,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.26'
+VERSION='2021.27'
 LOGNAME=APPNAME
 
 import subprocess, shlex

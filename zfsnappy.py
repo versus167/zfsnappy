@@ -154,11 +154,12 @@ def main():
             # dm ==3 -> nichts wird gelöscht - im Zweifel wird halt dann kein Snapshot erstellt
             return
         if ns.nodeletedays >= chkday:
-            # Wir sind also in dem Bereich, wo die Keep-Snapshost erhalten bleiben sollen
-            
-            if ns.keepsnapshots >= snapcount:
-                log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount} innerhalb der nodeletedays {ns.nodeletedays}')
+            # Wir sind also in dem Bereich, wo die Snapshots erhalten bleiben sollen
+            if checkminfree(): # true = genug frei
                 return
+                if ns.keepsnapshots >= snapcount:
+                    log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount} innerhalb der nodeletedays {ns.nodeletedays}')
+                    return
         cmd = 'zfs destroy '+name
         args = shlex.split(cmd)
         
@@ -201,9 +202,9 @@ def main():
     parser.add_argument('-s','--spacefree',dest='freespace',
                         help='Mindestens freier Speicher in GB - default ausgeschalten',type=int,default=0)
     parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
-    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3- es wird nichts gelöscht',
+    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3 - es wird nichts gelöscht',
                         default=1)
-    parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage in dem die Option [keep] geprüft wird',
+    parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an dem nichts gelöscht werden soll. Es sei denn der Speicher ist zu knapp und [keep] lässt löschen zu.',
                         default=10)
     parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger')
     parser.set_defaults(verbose=False)

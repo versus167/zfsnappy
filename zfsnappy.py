@@ -148,14 +148,17 @@ def main():
         else:
             aus = subprocess.run(shlex.split(cmd))
             aus.check_returncode()
-    def destroySnapshot(name):
+    def destroySnapshot(name,chkday):
         global snapcount # Ausnahmsweise...
         if ns.dm == 3:
             # dm ==3 -> nichts wird gelöscht - im Zweifel wird halt dann kein Snapshot erstellt
             return
-        if ns.keepsnapshots >= snapcount:
-            log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount}')
-            return
+        if ns.nodeletedays >= chkday:
+            # Wir sind also in dem Bereich, wo die Keep-Snapshost erhalten bleiben sollen
+            
+            if ns.keepsnapshots >= snapcount:
+                log.debug(f'{name} wird nicht gelöscht wegen keepsnapshots {ns.keepsnapshots} >= snapcount {snapcount} innerhalb der nodeletedays {ns.nodeletedays}')
+                return
         cmd = 'zfs destroy '+name
         args = shlex.split(cmd)
         
@@ -185,7 +188,7 @@ def main():
         return listesnaps
     
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     defaultintervall = []
     
     parser.add_argument("-i", "--holdinterval", dest="holds",
@@ -277,15 +280,15 @@ def main():
             if ns.verbose:
                 log.info(f'{i} {chkday} days')
             hold = False
-            if chkday <= ns.nodeletedays and ns.nodeletedays>0:
-                if ns.verbose:
-                    log.info(f'Hold für {i} wegen "nodeletedays"')
-                hold = True
-            else:
-                for x in inters:
-                    if x.checkday(chkday):
-                        log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
-                        hold = True
+#             if chkday <= ns.nodeletedays and ns.nodeletedays>0:
+#                 if ns.verbose:
+#                     log.info(f'Hold für {i} wegen "nodeletedays"')
+#                 hold = True
+#            else:
+            for x in inters:
+                if x.checkday(chkday):
+                    log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
+                    hold = True
                         
                         
             
@@ -297,7 +300,7 @@ def main():
                         log.debug('delete wegen deletemode = 2')
                     else:
                         log.debug('delete wegen freespace')
-                    destroySnapshot(i)
+                    destroySnapshot(i,chkday)
         # Als letztes: Snapshot erstellen
         if checkminfree(True): # Nur wenn genug frei ist, wird ein Snapshot erstellt
             takeSnapshot()

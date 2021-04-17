@@ -53,7 +53,7 @@ Todo:
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.27'
+VERSION='2021.27.1'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -313,7 +313,7 @@ def main():
             listesnaps = getsnaplist()
             for i in sorted(listesnaps):
                 log.debug('delete wegen freespace')
-                destroySnapshot(i)
+                destroySnapshot(i,chkday)
                 if checkminfree(True):
                     takeSnapshot()
                     break

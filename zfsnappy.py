@@ -200,28 +200,39 @@ class zfsdataset(object):
         '''
         pass
     
+    def checkminfree(self):
+        pass
+    
+    def destroysnapshot(self):
+        pass
+    
+    def getsnaplist(self):
+        pass
+    
+    def takensapshot(self):
+        pass
 
 
 def main():
-    def checkfs(fsys):
-        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
-        - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
-        ret = subprocess.run(['zfs','get','-H','type',fsys],stdout=subprocess.PIPE,universal_newlines=True)
-        if ret.returncode > 0:
-            return 1
-        out = ret.stdout.split('\t')
-        if out[2] == 'filesystem' or out[2] == 'volume':
-            pass
-        else: 
-            log.info(f'{fsys} ist nicht geeignet für Snapshots!')
-            return 1
-        ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
-        if ret.returncode > 0:
-            return 2
-        autosnapshot = ret.stdout.split('\t')
-        if autosnapshot[2].lower() == 'false':
-            log.debug(f'{fsys} com.sun:auto-snapshot = False')
-            return 2
+    # def checkfs(fsys):
+    #     ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
+    #     - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
+    #     ret = subprocess.run(['zfs','get','-H','type',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+    #     if ret.returncode > 0:
+    #         return 1
+    #     out = ret.stdout.split('\t')
+    #     if out[2] == 'filesystem' or out[2] == 'volume':
+    #         pass
+    #     else: 
+    #         log.info(f'{fsys} ist nicht geeignet für Snapshots!')
+    #         return 1
+    #     ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+    #     if ret.returncode > 0:
+    #         return 2
+    #     autosnapshot = ret.stdout.split('\t')
+    #     if autosnapshot[2].lower() == 'false':
+    #         log.debug(f'{fsys} com.sun:auto-snapshot = False')
+    #         return 2
         # ret = subprocess.run(['zfs','holds','-H',fsys],stdout=subprocess.PIPE,universal_newlines=True)
         # if ret.returncode > 0:
         #     return 2
@@ -229,7 +240,7 @@ def main():
         # if keep[1].lower() == 'keep':
         #     log.debug(f'{fsys} steht auf keep')
         #     return 2
-        return 0
+        # return 0
     def checkminfree(tell=False):
         ''' Prüft den freien Space im FS '''
                
@@ -304,70 +315,70 @@ def main():
         return listesnaps
     
     
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    defaultintervall = [1,1]
-    
-    parser.add_argument("-i", "--holdinterval", dest="holds",
-                  help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
-                  nargs=2,type=int,action='append',default=defaultintervall)
-    parser.add_argument("-f","--filesystem",dest='zfsfs',
-                      help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
-    parser.add_argument('-m','--minfree',dest='minfree',
-                      help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent',type=int, default=20)
-    parser.add_argument('-s','--spacefree',dest='freespace',
-                        help='Mindestens freier Speicher in GB - default ausgeschalten',type=int,default=0)
-    parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
-    parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3 - es wird nichts gelöscht',
-                        default=1)
-    parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an dem nichts gelöscht werden soll. Es sei denn der Speicher ist zu knapp und [keep] lässt löschen zu.',
-                        default=10)
-    parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger')
-    parser.set_defaults(verbose=False)
-    parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
-    parser.set_defaults(recursion=False)
-    parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall innerhalb der NODELETEDAYS behalten',default=0)
-    parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
-    parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
-    parser.add_argument('--wait-time',dest='waittime',help='Wieviel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen, da ZFS asynchron löscht.',
-                        type=int,default=20)
-    global snapcount
-    ns = parser.parse_args(sys.argv[1:])
-    log = logging.getLogger(LOGNAME)
-    if ns.verbose:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh = logging.StreamHandler()
-    fh.setFormatter(formatter)
-    log.addHandler(fh)
-    log.info(f'{APPNAME} {VERSION} ************************** Start')
-    log.debug(ns)
-    # 0.1 Check ob das FS gemounted ist
-    fslist = []
-    if ns.recursion:
-        # dann sammeln wir mal die Filesysteme
-        arg = shlex.split('zfs list -H -r '+ns.zfsfs)
-        liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
-        liste.check_returncode()
-        for i in liste.stdout.split('\n')[:-1]:
-            fslist.append(i.split('\t')[0])
-        
-    else:
-        fslist.append(ns.zfsfs)
-    if ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
-        ns.holds.append((1,1))
-    for fs in fslist:
-        
-        log.info(f'Aktuelles Filesystem: {fs}')
-       
-        inters = []
-        for i in ns.holds:
-            inter = intervall(i[0],i[1])
-            inters.append(inter)
-        ret =  checkfs(fs)
-        if ret != 0:
-            continue
+    # parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # defaultintervall = [1,1]
+    #
+    # parser.add_argument("-i", "--holdinterval", dest="holds",
+    #               help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
+    #               nargs=2,type=int,action='append',default=defaultintervall)
+    # parser.add_argument("-f","--filesystem",dest='zfsfs',
+    #                   help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
+    # parser.add_argument('-m','--minfree',dest='minfree',
+    #                   help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent',type=int, default=20)
+    # parser.add_argument('-s','--spacefree',dest='freespace',
+    #                     help='Mindestens freier Speicher in GB - default ausgeschalten',type=int,default=0)
+    # parser.add_argument('-p','--prefix',dest='prefix',help='Der Prefix für die Bezeichnungen der Snapshots',default='zfsnappy')
+    # parser.add_argument('-d','--deletemode',dest='dm',type=int,help='Deletemodus 1 = mur falls minfree unterschritten, 2 - regulär laut Intervall + minfree, 3 - es wird nichts gelöscht',
+    #                     default=1)
+    # parser.add_argument('-n','--nodeletedays',dest='nodeletedays',type=int,help='Anzahl Tage an dem nichts gelöscht werden soll. Es sei denn der Speicher ist zu knapp und [keep] lässt löschen zu.',
+    #                     default=10)
+    # parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger')
+    # parser.set_defaults(verbose=False)
+    # parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
+    # parser.set_defaults(recursion=False)
+    # parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall innerhalb der NODELETEDAYS behalten',default=0)
+    # parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
+    # parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
+    # parser.add_argument('--wait-time',dest='waittime',help='Wieviel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen, da ZFS asynchron löscht.',
+    #                     type=int,default=20)
+    # global snapcount
+    # ns = parser.parse_args(sys.argv[1:])
+    # log = logging.getLogger(LOGNAME)
+    # if ns.verbose:
+    #     log.setLevel(logging.DEBUG)
+    # else:
+    #     log.setLevel(logging.INFO)
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # fh = logging.StreamHandler()
+    # fh.setFormatter(formatter)
+    # log.addHandler(fh)
+    # log.info(f'{APPNAME} {VERSION} ************************** Start')
+    # log.debug(ns)
+    # # 0.1 Check ob das FS gemounted ist
+    # fslist = []
+    # if ns.recursion:
+    #     # dann sammeln wir mal die Filesysteme
+    #     arg = shlex.split('zfs list -H -r '+ns.zfsfs)
+    #     liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
+    #     liste.check_returncode()
+    #     for i in liste.stdout.split('\n')[:-1]:
+    #         fslist.append(i.split('\t')[0])
+    #
+    # else:
+    #     fslist.append(ns.zfsfs)
+    # if ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
+    #     ns.holds.append((1,1))
+    # for fs in fslist:
+    #
+    #     log.info(f'Aktuelles Filesystem: {fs}')
+    #
+    #     inters = []
+    #     for i in ns.holds:
+    #         inter = intervall(i[0],i[1])
+    #         inters.append(inter)
+    #     ret =  checkfs(fs)
+    #     if ret != 0:
+    #         continue
         
         # Hier käme dann der Ablauf
         if ns.dm == 3:

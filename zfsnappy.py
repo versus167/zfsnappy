@@ -48,7 +48,7 @@ Todo:
 
   - Der Code ist zu säubern...
     - 
-      
+    die Meldung sind teilweise etwas verwirrend...
 
 '''
 

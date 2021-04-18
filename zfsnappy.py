@@ -102,7 +102,7 @@ class zfsnappy(object):
     '''
     def __init__(self,):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        defaultintervall = [1,1]
+        defaultintervall = []
         
         parser.add_argument("-i", "--holdinterval", dest="holds",
                       help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
@@ -127,21 +127,68 @@ class zfsnappy(object):
         parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
         parser.add_argument('--wait-time',dest='waittime',help='Wieviel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen, da ZFS asynchron löscht.',
                             type=int,default=20)
-        ns = parser.parse_args(sys.argv[1:])
-        ns = parser.parse_args(sys.argv[1:])
-        log = logging.getLogger(LOGNAME)
-        if ns.verbose:
-            log.setLevel(logging.DEBUG)
+        self.ns = parser.parse_args(sys.argv[1:])
+        if self.ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
+            self.ns.holds.append((1,1))
+        self.log = logging.getLogger(LOGNAME)
+        if self.ns.verbose:
+            self.log.setLevel(logging.DEBUG)
         else:
-            log.setLevel(logging.INFO)
+            self.log.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh = logging.StreamHandler()
         fh.setFormatter(formatter)
-        log.addHandler(fh)
-        log.info(f'{APPNAME} {VERSION} ************************** Start')
-        log.debug(ns)
-
+        self.log.addHandler(fh)
+        self.log.info(f'{APPNAME} {VERSION} ************************** Start')
+        self.log.debug(self.ns)
+        if self.collectdatasets() == False:
+            self.log.info('Kein korrektes Filesystem übergeben!')
+            return
+        self.log.debug(self.fslist)
+        
+    def collectdatasets(self):
+        '''
+        Schaut mal was für Filesysteme zu behandeln sind
+        '''
+        self.fslist = []
+        if self.ns.recursion:
+            # dann sammeln wir mal die Filesysteme
+            arg = shlex.split('zfs list -H -r '+self.ns.zfsfs)
+            liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
+            liste.check_returncode()
+            for i in liste.stdout.split('\n')[:-1]:
+                temp_fs = i.split('\t')[0]
+                if self.checkfs(temp_fs):
+                    self.fslist.append(temp_fs)
+        
+        else:
+            if self.checkfs(self.ns.zfsfs):
+                self.fslist.append(self.ns.zfsfs)
+        if len(self.fslist) > 0:
+            return True
+        else:
+            return False
     
+    def checkfs(self,fsys):
+        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
+        - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
+        ret = subprocess.run(['zfs','get','-H','type',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+        if ret.returncode > 0:
+            return False
+        out = ret.stdout.split('\t')
+        if out[2] == 'filesystem' or out[2] == 'volume':
+            pass
+        else: 
+            self.log.info(f'{fsys} ist nicht geeignet für Snapshots!')
+            return False
+        ret = subprocess.run(['zfs','get','-H','com.sun:auto-snapshot',fsys],stdout=subprocess.PIPE,universal_newlines=True)
+        if ret.returncode > 0:
+            return False
+        autosnapshot = ret.stdout.split('\t')
+        if autosnapshot[2].lower() == 'false':
+            self.log.debug(f'{fsys} com.sun:auto-snapshot = False')
+            return False
+        return True
 
 class zfsdataset(object):
     '''

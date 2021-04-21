@@ -111,6 +111,7 @@ class zfsnappy(object):
         self.log.debug(self.fslist)
         for fsys in self.fslist:
             zfsdataset(fsys,self.ns)
+        self.log.info(f'{APPNAME} {VERSION} ************************** Ende')
     def paramters(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         defaultintervall = []
@@ -217,9 +218,10 @@ class zfsdataset(object):
             return
         self.snaplist = self.getsnaplist()
         self.log.debug(self.snaplist)
-        self.snapcount = len(self.snaplist)
         self.log.info(f'{self.fsys}: {self.snapcount} vor dem Start.')
-        
+        self.cleanup_snapshots()
+        self.takesnapshot()
+        self.log.info(f'{self.fsys}: {self.snapcount} nach Ablauf.')
         pass
     
     
@@ -247,7 +249,7 @@ class zfsdataset(object):
                 if x.checkday(chkday):
                     self.log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
                     hold = True
-            if hold == True:
+            if hold == False:
                 self.destroysnapshot(snap)
         if self.checkminfree():
             return
@@ -310,6 +312,19 @@ class zfsdataset(object):
         pass
     
     def destroysnapshot(self,snap):
+        cmd = 'zfs destroy '+snap
+        args = shlex.split(cmd)
+        
+        if self.ns.dryrun:
+            pass
+        else:
+            aus = subprocess.run(args,stderr=subprocess.PIPE)
+            if aus.returncode > 0:
+                self.log.info(f'Problem beim Löschen: {aus.stderr.decode("UTF-8")}')
+            else:
+                self.log.info(cmd)
+                self.snapcount = self.snapcount -1 # Jetzt ist wirklich einer weniger
+                time.sleep(self.ns.waittime)
         pass
     
     def check_keep(self,snapshot):
@@ -341,15 +356,16 @@ class zfsdataset(object):
                     continue
                 else:
                     listesnaps.append(snp)
-        
+        self.snapcount = len(listesnaps)
         return sorted(listesnaps)
         
     
     def takesnapshot(self):
         if self.ns.no_snapshot:
             return
-        self.log.info(f'{self.fsys}: Take Snapshot')
+        
         if self.checkminfree(True):
+            self.log.info(f'{self.fsys}: Take Snapshot')
             aktuell = datetime.datetime.now()
             snapname = self.fsys+'@'+self.ns.prefix+'_'+aktuell.isoformat() 
             cmd = 'zfs snapshot '+snapname
@@ -359,6 +375,7 @@ class zfsdataset(object):
             else:
                 aus = subprocess.run(shlex.split(cmd))
                 aus.check_returncode()
+                self.snapcount += 1
         
 
 

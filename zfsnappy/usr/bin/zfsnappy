@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2021.28 - 2021-04-21 - Soll die Snapshots auf "keep" selbst erkennen und nicht löschen + rewritw - vs.
+2021.28.1 - 2021-04-21 - Soll die Snapshots auf "keep" selbst erkennen und nicht löschen + rewritw - vs.
 2021.27.1 - 2021-04-17 - Änderung Verhalten von keep/nodeletedays - Innerhalb der nodeletedays wird nur gelöscht,
                        wenn minspace nicht ausreicht und keep nicht unterschritten - vs.
 2021.26 - 2021.01.26 - owner auf root - vs.
@@ -47,7 +47,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.28'
+VERSION='2021.28.1'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -203,6 +203,7 @@ class zfsdataset(object):
         self.fsys = fsys
         self.ns = argumente
         if self.ns.dm == 3:
+            self.snapcount = 0
             # Hier wird nur gecheckt, ob genug Platz ist und der Snapshot gesetzt
             if self.checkminfree(True):
                 self.takesnapshot()
@@ -236,10 +237,9 @@ class zfsdataset(object):
                 return
             chkday = self.diffdays(snap)
             self.log.debug(f'{i} {chkday} days')
-            if self.keepindays(snap,self.snapcount-count):
-                # Abbruch wegen keepsnapshots in nodeletedays
-                self.log.debug(f'{self.fsys}: Abbruch cleanup wegen Mindestmenge snapshots innerhalb der nodeletedays')
-                return
+            if self.ns.nodeletedays >= chkday:
+                # Innerhalb dieser Tage darf regulär nichts gelöscht werden
+                break
             hold = False
             for x in inters:
                 if x.checkday(chkday):

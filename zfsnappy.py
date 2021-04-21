@@ -101,6 +101,17 @@ class zfsnappy(object):
     Der Einstieg
     '''
     def __init__(self,):
+        
+        self.paramters()
+        self.log.debug(self.ns)
+        self.log.info(f'{APPNAME} {VERSION} ************************** Start')
+        if self.collectdatasets() == False:
+            self.log.info('Kein korrektes Filesystem übergeben!')
+            return
+        self.log.debug(self.fslist)
+        for fsys in self.fslist:
+            zfsdataset(fsys,self.ns)
+    def paramters(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         defaultintervall = []
         
@@ -139,14 +150,6 @@ class zfsnappy(object):
         fh = logging.StreamHandler()
         fh.setFormatter(formatter)
         self.log.addHandler(fh)
-        self.log.info(f'{APPNAME} {VERSION} ************************** Start')
-        self.log.debug(self.ns)
-        if self.collectdatasets() == False:
-            self.log.info('Kein korrektes Filesystem übergeben!')
-            return
-        self.log.debug(self.fslist)
-        for fsys in self.fslist:
-            zfsdataset(fsys,self.ns)
         
     def collectdatasets(self):
         '''
@@ -200,6 +203,8 @@ class zfsdataset(object):
         '''
         Führt die Operationen am übergeben Filesystem aus
         '''
+        
+
         self.log = logging.getLogger(LOGNAME)
         self.fsys = fsys
         self.ns = argumente
@@ -211,11 +216,78 @@ class zfsdataset(object):
                 self.log.info(f'{self.fsys}: Kein Snapshot erstellt, da nicht genügend Platz auf dem Dataset.')
             return
         self.snaplist = self.getsnaplist()
-        print(self.snaplist)        
+        self.log.debug(self.snaplist)
+        self.snapcount = len(self.snaplist)
+        self.log.info(f'{self.fsys}: {self.snapcount} vor dem Start.')
+        
         pass
     
+    
+    def cleanup_snapshots(self):
+        ''' Geht durch die Snaps und checkt die Löschbedingung '''
+        inters = []
+        
+        for i in self.ns.holds:
+            inter = intervall(i[0],i[1])
+            inters.append(inter)
+        for snap in self.snaplist:
+            if self.ns.dm == 1 and self.checkminfree():
+                # Abbruchbedingung - nichts wird mehr gelöscht
+                return
+            chkday = self.diffdays(snap)
+            self.log.debug(f'{i} {chkday} days')
+            if self.ns.dm == 1 and self.checkminfree():
+                # Es muss nichts gelöscht werden
+                return 
+            if self.keepindays(snap):
+                # Abbruch wegen keepsnapshots in nodeletedays
+                return
+            hold = False
+            for x in inters:
+                if x.checkday(chkday):
+                    self.log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
+                    hold = True
+            if hold == True:
+                self.destroysnapshot(snap)
+        if self.checkminfree():
+            return
+        # Also noch nicht genug Platz -> Löschen vom ältesten Snapshot Abbruchbedingung
+        self.snaplist = self.getsnaplist()
+        self.log.info(f'{self.fsys}: Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
+        for snap in self.snaplist:
+            if self.checkminfree() or self.keepindays(snap):
+                return
+            self.destroySnapshot(snap)
+            
+    def keepindays(self,snap):
+        ''' Checkt ob eine Löschsperre für diesen Snapshot besteht 
+        
+        true wenn snap behalten werden soll
+        '''
+        days = self.diffdays(snap)
+        if days <= self.ns.nodeletedays:
+            if self.snapcount <= self.ns.keepsnapshots:
+                return True
+        return False
+    
+    def diffdays(self,snap):
+        #erstmal die difftage zu heute ermitteln
+        heute = datetime.datetime.now()
+        vgl = self.fsys+'@'+self.ns.prefix+'_'
+        l = len(vgl)
+        dstring = snap[l:l+10] # damit wird nun noch mit dem glatten Datum verglichen - ohne Stunde/Minute
+        # Damit sollte es keine Rolle mehr spielen, wann das Script an einem Tag aufgerufen wird - Die diff-Tage
+        # sind immer gleich
+        
+        dt = datetime.datetime.strptime(dstring,'%Y-%m-%d')
+        tmp = heute - dt
+        days = tmp.days
+        return days
+    
     def checkminfree(self,tell=False):
-        ''' Prüft den freien Space im FS '''
+        ''' Prüft den freien Space im FS 
+        
+        true fals ja'''
                
         avai = subprocess.run(['zfs','list','-Hp','-o','avail',self.fsys],stdout=subprocess.PIPE,universal_newlines=True)
         used = subprocess.run(['zfs','list','-Hp','-o','used',self.fsys],stdout=subprocess.PIPE,universal_newlines=True)
@@ -237,11 +309,11 @@ class zfsdataset(object):
     
         pass
     
-    def destroysnapshot(self):
+    def destroysnapshot(self,snap):
         pass
     
     def check_keep(self,snapshot):
-        # Checkt ob auf dem Snapshot ein keep sitzt
+        # Checkt ob auf dem Snapshot ein keep sitzt - true falls ja
         ret = subprocess.run(['zfs','holds','-H',snapshot],stdout=subprocess.PIPE,universal_newlines=True)
         if ret.returncode > 0:
             return False
@@ -270,12 +342,24 @@ class zfsdataset(object):
                 else:
                     listesnaps.append(snp)
         
-        return listesnaps
+        return sorted(listesnaps)
         
     
     def takesnapshot(self):
+        if self.ns.no_snapshot:
+            return
         self.log.info(f'{self.fsys}: Take Snapshot')
-        pass
+        if self.checkminfree(True):
+            aktuell = datetime.datetime.now()
+            snapname = self.fsys+'@'+self.ns.prefix+'_'+aktuell.isoformat() 
+            cmd = 'zfs snapshot '+snapname
+            self.log.info(cmd)
+            if self.ns.dryrun:
+                pass
+            else:
+                aus = subprocess.run(shlex.split(cmd))
+                aus.check_returncode()
+        
 
 
 def main():

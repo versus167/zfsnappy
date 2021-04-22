@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.28.2 - 2021-04-22 - Fix 
 2021.28.1 - 2021-04-21 - Soll die Snapshots auf "keep" selbst erkennen und nicht löschen + rewritw - vs.
 2021.27.1 - 2021-04-17 - Änderung Verhalten von keep/nodeletedays - Innerhalb der nodeletedays wird nur gelöscht,
                        wenn minspace nicht ausreicht und keep nicht unterschritten - vs.
@@ -47,7 +48,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.28.1'
+VERSION='2021.28.2'
 LOGNAME=APPNAME
 
 import subprocess, shlex

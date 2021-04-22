@@ -246,20 +246,23 @@ class zfsdataset(object):
                     self.log.debug(f'Hold für {i} wegen "Intervall" days: {x.intervalllaenge} Anzahl: {x.holdversions} , Intervallnummer: {x.intervallnraktuell+1}')
                     hold = True
             if hold == False:
-                self.destroysnapshot(snap)
+                if self.destroysnapshot(snap):
+                    count -= 1
+                    
         if self.checkminfree():
             self.log.debug(f'{self.fsys}: Abbruch cleanup, da genug Platz')
             return
         # Also noch nicht genug Platz -> Löschen vom ältesten Snapshot Abbruchbedingung
         self.snaplist = self.getsnaplist()
         self.log.info(f'{self.fsys}: Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
-        count = 0
+        count = -1
         for snap in self.snaplist:
             count += 1
             if self.checkminfree() or self.keepindays(snap,self.snapcount-count):
                 self.log.debug(f'{self.fsys}: Abbruch cleanup in der Zusatzrunde')
                 return
-            self.destroysnapshot(snap)
+            if self.destroysnapshot(snap):
+                    count -= 1
         self.log.debug(f'{self.fsys}: Ende Cleanup, mehr können wir nicht löschen...')    
     def keepindays(self,snap,snapnumber):
         ''' Checkt ob eine Löschsperre für diesen Snapshot besteht 
@@ -317,16 +320,18 @@ class zfsdataset(object):
         args = shlex.split(cmd)
         
         if self.ns.dryrun:
-            pass
+            return False
         else:
             aus = subprocess.run(args,stderr=subprocess.PIPE)
             if aus.returncode > 0:
                 self.log.info(f'Problem beim Löschen: {aus.stderr.decode("UTF-8")}')
+                return False
             else:
                 self.log.info(cmd)
-                self.snapcount = self.snapcount -1 # Jetzt ist wirklich einer weniger
+                self.snapcount -= 1 # Jetzt ist wirklich einer weniger
                 time.sleep(self.ns.waittime)
-        pass
+                return True
+        
     
     def check_keep(self,snapshot):
         # Checkt ob auf dem Snapshot ein keep sitzt - true falls ja

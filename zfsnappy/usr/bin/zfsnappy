@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.28.3 - - Message zum Abbruch von Cleanup wegen keep in nodeletedays - vs.
 2021.28.2 - 2021-04-22 - Fix 
 2021.28.1 - 2021-04-21 - Soll die Snapshots auf "keep" selbst erkennen und nicht löschen + rewritw - vs.
 2021.27.1 - 2021-04-17 - Änderung Verhalten von keep/nodeletedays - Innerhalb der nodeletedays wird nur gelöscht,
@@ -48,7 +49,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.28.2'
+VERSION='2021.28.3'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -259,8 +260,12 @@ class zfsdataset(object):
         count = -1
         for snap in self.snaplist:
             count += 1
-            if self.checkminfree() or self.keepindays(snap,self.snapcount-count):
-                self.log.debug(f'{self.fsys}: Abbruch cleanup in der Zusatzrunde')
+            if self.checkminfree(): 
+                # dann ist jetzt genug frei
+                return 
+            else:
+                if self.keepindays(snap,self.snapcount-count):
+                    self.log.debug(f'{self.fsys}: Abbruch cleanup in der Zusatzrunde wegen Anzahl "keep in nodeletedays"')
                 return
             if self.destroysnapshot(snap):
                     count -= 1

@@ -265,7 +265,7 @@ class zfsdataset(object):
                 return 
             else:
                 if self.keepindays(snap,self.snapcount-count):
-                    self.log.debug(f'{self.fsys}: Abbruch cleanup in der Zusatzrunde wegen Anzahl "keep in nodeletedays"')
+                    self.log.info(f'{self.fsys}: Abbruch cleanup wegen Anzahl "keep in nodeletedays"')
                     return
             if self.destroysnapshot(snap):
                     count -= 1

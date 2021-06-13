@@ -392,7 +392,7 @@ class zfsdataset(object):
                     aus.check_returncode()
                 except subprocess.CalledProcessError as grepexc: 
                     self.log.info(f"error code {grepexc.returncode}, {grepexc.output}")
-                    self.log.info("Abruch da Snapshot nicht erstellt werden konnte!")
+                    self.log.info("Abbruch, da Snapshot nicht erstellt werden konnte!")
                     exit()
                 self.snapcount += 1
         

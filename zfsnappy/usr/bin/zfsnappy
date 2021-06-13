@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.30 - 2021-06-13 - abfangen Fehler, wenn Snapshot nicht erstellt werden kann - vs. 
 2021.29 - 2021-04-24 - Messages und Fix keepindays - vs.
 2021.28.2 - 2021-04-22 - Fix 
 2021.28.1 - 2021-04-21 - Soll die Snapshots auf "keep" selbst erkennen und nicht löschen + rewritw - vs.
@@ -49,7 +50,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.29'
+VERSION='2021.30'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -387,7 +388,12 @@ class zfsdataset(object):
                 pass
             else:
                 aus = subprocess.run(shlex.split(cmd))
-                aus.check_returncode()
+                try:
+                    aus.check_returncode()
+                except subprocess.CalledProcessError as grepexc: 
+                    self.log.info(f"error code {grepexc.returncode}, {grepexc.output}")
+                    self.log.info("Abruch da Snapshot nicht erstellt werden konnte!")
+                    exit()
                 self.snapcount += 1
         
 if __name__ == '__main__':

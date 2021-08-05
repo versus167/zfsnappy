@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.31 - 2021-08-05 - ab jetzt wird UTC für die Benennung der Snapshots verwendet - vs.
 2021.30 - 2021-06-13 - abfangen Fehler, wenn Snapshot nicht erstellt werden kann - vs. 
 2021.29 - 2021-04-24 - Messages und Fix keepindays - vs.
 2021.28.2 - 2021-04-22 - Fix 
@@ -50,7 +51,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.30'
+VERSION='2021.30.9'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -284,7 +285,7 @@ class zfsdataset(object):
     
     def diffdays(self,snap):
         #erstmal die difftage zu heute ermitteln
-        heute = datetime.datetime.now()
+        heute = datetime.datetime.utcnow()
         vgl = self.fsys+'@'+self.ns.prefix+'_'
         l = len(vgl)
         dstring = snap[l:l+10] # damit wird nun noch mit dem glatten Datum verglichen - ohne Stunde/Minute
@@ -380,7 +381,7 @@ class zfsdataset(object):
         
         if self.checkminfree():
             self.log.info(f'{self.fsys}: Take Snapshot')
-            aktuell = datetime.datetime.now()
+            aktuell = datetime.datetime.utcnow()
             snapname = self.fsys+'@'+self.ns.prefix+'_'+aktuell.isoformat() 
             cmd = 'zfs snapshot '+snapname
             self.log.info(cmd)

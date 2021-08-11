@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.32 - 2021-08-11 - Hold-Snaps werden jetzt unabhängig vom Tag erkannt - vs.
 2021.31 - 2021-08-05 - ab jetzt wird UTC für die Benennung der Snapshots verwendet - vs.
 2021.30 - 2021-06-13 - abfangen Fehler, wenn Snapshot nicht erstellt werden kann - vs. 
 2021.29 - 2021-04-24 - Messages und Fix keepindays - vs.
@@ -51,13 +52,25 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.31'
+VERSION='2021.32  2021-08-11'
 LOGNAME=APPNAME
 
 import subprocess, shlex
 import datetime, time
 import argparse, sys
 import logging
+
+def subrun(command,checkretcode=True,**kwargs):
+    '''
+    Führt die übergebene Kommandozeile aus und gibt das Ergebnis
+    zurück
+    '''
+    log = logging.getLogger(LOGNAME)
+    args = shlex.split(command)
+    log.debug(' '.join(args))
+    ret = subprocess.run(args,**kwargs)
+    if checkretcode: ret.check_returncode()
+    return ret
 
 class intervall(object):
     '''
@@ -341,18 +354,19 @@ class zfsdataset(object):
                 return True
         
     
-    def check_keep(self,snapshot):
-        # Checkt ob auf dem Snapshot ein keep sitzt - true falls ja
-        ret = subprocess.run(['zfs','holds','-H',snapshot],stdout=subprocess.PIPE,universal_newlines=True)
-        if ret.returncode > 0:
-            return False
-        keep = ret.stdout.split('\t')
-        try:
-            if keep[1].lower() == 'keep':
-                self.log.debug(f'{snapshot} steht auf keep')
+    def check_hold(self,snapshot):
+        # Checkt ob auf dem Snapshot auf hold steht - true falls ja
+        cmd = ' zfs list -H -d 1 -t snapshot -o userrefs,name '+snapshot
+        ret = subrun(cmd,stdout=subprocess.PIPE,universal_newlines=True)
+        ret.check_returncode()
+        if ret.stdout == None:
+            return
+        for i in ret.stdout.split('\n'):
+            if len(i) == 0:
+                return False
+            j = i.split('\t')
+            if int(j[0]) > 0:
                 return True
-        except:
-            return False
         return False
     
     def getsnaplist(self):
@@ -366,7 +380,7 @@ class zfsdataset(object):
         for snp in aus.stdout.split('\n'):
             
             if snp[0:l] == vgl:
-                if self.check_keep(snp): # Schmeisst die auf Keep auch raus
+                if self.check_hold(snp): # Schmeisst die auf Keep auch raus
                     continue
                 else:
                     listesnaps.append(snp)

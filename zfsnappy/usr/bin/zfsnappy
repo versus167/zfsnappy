@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2021.33 - 2021-09-04 - kleine Änderung in der log-Ausgabe bei keepindays - vs.
 2021.32 - 2021-08-11 - Hold-Snaps werden jetzt unabhängig vom Tag erkannt - vs.
 2021.31 - 2021-08-05 - ab jetzt wird UTC für die Benennung der Snapshots verwendet - vs.
 2021.30 - 2021-06-13 - abfangen Fehler, wenn Snapshot nicht erstellt werden kann - vs. 
@@ -52,7 +53,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.32  2021-08-11'
+VERSION='2021.33  2021-09-04'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -280,7 +281,7 @@ class zfsdataset(object):
                 return 
             else:
                 if self.keepindays(snap,self.snapcount-count):
-                    self.log.info(f'{self.fsys}: Abbruch cleanup wegen Anzahl "keep in nodeletedays"')
+                    self.log.info(f'{self.fsys}: Abbruch cleanup wegen Anzahl "keep ({self.snapcount-count} <= {self.ns.keepsnapshots}) in nodeletedays ({self.ns.nodeletedays})"')
                     return
             if self.destroysnapshot(snap):
                     count -= 1

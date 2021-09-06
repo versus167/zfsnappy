@@ -1,5 +1,6 @@
 #!/bin/bash
 cp zfsnappy.py ./zfsnappy/usr/bin/zfsnappy
 chown root:root ./zfsnappy/usr/bin/zfsnappy
+chmod 0555 ./zfsnappy/usr/bin/zfsnappy
 dpkg-deb --build zfsnappy
 

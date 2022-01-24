@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2022.34 - 2022-01-24 - --without-root - Nur subsysteme werden behandelt - vs.
 2021.33 - 2021-09-04 - kleine Änderung in der log-Ausgabe bei keepindays - vs.
 2021.32 - 2021-08-11 - Hold-Snaps werden jetzt unabhängig vom Tag erkannt - vs.
 2021.31 - 2021-08-05 - ab jetzt wird UTC für die Benennung der Snapshots verwendet - vs.
@@ -53,7 +54,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2021.33  2021-09-04'
+VERSION='2022.33.1  2022-01-24'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -120,7 +121,11 @@ class zfsnappy(object):
             self.log.info('Kein korrektes Filesystem übergeben!')
             return
         self.log.debug(self.fslist)
-        for fsys in self.fslist:
+        if self.ns.withoutroot:
+            startlist = 1
+        else:
+            startlist = 0
+        for fsys in self.fslist[startlist:]:
             zfsdataset(fsys,self.ns)
         self.log.info(f'{APPNAME} {VERSION} ************************** Ende')
     def paramters(self):
@@ -143,13 +148,16 @@ class zfsnappy(object):
                             default=10)
         parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger')
         parser.set_defaults(verbose=False)
-        parser.add_argument('-r','--recursion',dest='recursion',action='store_true',help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
+        parser.add_argument('-r','--recursion',dest='recursion',action='store_true',required='--without-root' in sys.argv,
+                            help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
         parser.set_defaults(recursion=False)
         parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall innerhalb der NODELETEDAYS behalten',default=0)
         parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
         parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
         parser.add_argument('--wait-time',dest='waittime',help='Wieviel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen, da ZFS asynchron löscht.',
                             type=int,default=20)
+        parser.add_argument('--without-root',dest='withoutroot',
+                            help="zfsnappy wird nicht auf den root des übergebenen Filesystems angewendet",action="store_true")
         self.ns = parser.parse_args(sys.argv[1:])
         if self.ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
             self.ns.holds.append((1,1))

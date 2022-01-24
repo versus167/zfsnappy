@@ -54,7 +54,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2022.33.1  2022-01-24'
+VERSION='2022.34  2022-01-24'
 LOGNAME=APPNAME
 
 import subprocess, shlex

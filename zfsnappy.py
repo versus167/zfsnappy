@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+ - 2023-08-08 - nun wird die zfs wait-Funktion verwendet - vs. - scheint nicht zu funzen (von zfs aus)
 2022.34 - 2022-01-24 - --without-root - Nur subsysteme werden behandelt - vs.
 2021.33 - 2021-09-04 - kleine Änderung in der log-Ausgabe bei keepindays - vs.
 2021.32 - 2021-08-11 - Hold-Snaps werden jetzt unabhängig vom Tag erkannt - vs.
@@ -54,7 +55,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2022.34  2022-01-24'
+VERSION='2022.34+  2023-08-05'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -154,8 +155,6 @@ class zfsnappy(object):
         parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall innerhalb der NODELETEDAYS behalten',default=0)
         parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
         parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
-        parser.add_argument('--wait-time',dest='waittime',help='Wieviel Sekunden soll nach dem Löschen eines Snapshot gewartet werden? Wenn Löschen nach freiem Speicherplatz, dann ist es besser diesen Wert auf 20 Sekunden (Standard) oder mehr zu lassen, da ZFS asynchron löscht.',
-                            type=int,default=20)
         parser.add_argument('--without-root',dest='withoutroot',
                             help="zfsnappy wird nicht auf den root des übergebenen Filesystems angewendet",action="store_true")
         self.ns = parser.parse_args(sys.argv[1:])
@@ -359,7 +358,9 @@ class zfsdataset(object):
             else:
                 self.log.info(cmd)
                 self.snapcount -= 1 # Jetzt ist wirklich einer weniger
-                time.sleep(self.ns.waittime)
+                args = f"zfs wait -t deleteq {self.fsys}"
+                aus = subrun(args,stdout=subprocess.PIPE,universal_newlines=True) # zfs wait scheint noch Probleme zu bereiten
+                #time.sleep(self.ns.waittime)
                 return True
         
     

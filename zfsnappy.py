@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
- - 2023-08-08 - nun wird die zfs wait-Funktion verwendet - vs. - scheint nicht zu funzen (von zfs aus)
+2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
 2022.34 - 2022-01-24 - --without-root - Nur subsysteme werden behandelt - vs.
 2021.33 - 2021-09-04 - kleine Änderung in der log-Ausgabe bei keepindays - vs.
 2021.32 - 2021-08-11 - Hold-Snaps werden jetzt unabhängig vom Tag erkannt - vs.
@@ -55,7 +55,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2022.34+  2023-08-05'
+VERSION='2023.35  2023-08-06'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -226,6 +226,7 @@ class zfsdataset(object):
 
         self.log = logging.getLogger(LOGNAME)
         self.fsys = fsys
+        self.pool = fsys.split('/')[0]
         self.ns = argumente
         if self.ns.dm == 3:
             self.snapcount = 0
@@ -358,8 +359,8 @@ class zfsdataset(object):
             else:
                 self.log.info(cmd)
                 self.snapcount -= 1 # Jetzt ist wirklich einer weniger
-                args = f"zfs wait -t deleteq {self.fsys}"
-                aus = subrun(args,stdout=subprocess.PIPE,universal_newlines=True) # zfs wait scheint noch Probleme zu bereiten
+                args = f"zpool wait -t free {self.pool}"
+                aus = subrun(args,stdout=subprocess.PIPE,universal_newlines=True) 
                 #time.sleep(self.ns.waittime)
                 return True
         

@@ -361,7 +361,6 @@ class zfsdataset(object):
                 self.snapcount -= 1 # Jetzt ist wirklich einer weniger
                 args = f"zpool wait -t free {self.pool}"
                 aus = subrun(args,stdout=subprocess.PIPE,universal_newlines=True) 
-                #time.sleep(self.ns.waittime)
                 return True
         
     

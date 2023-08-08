@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2023.35.2 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
 2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
 2022.34 - 2022-01-24 - --without-root - Nur subsysteme werden behandelt - vs.
 2021.33 - 2021-09-04 - kleine Änderung in der log-Ausgabe bei keepindays - vs.
@@ -55,13 +56,22 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2023.35.1  2023-08-08'
+VERSION='2023.35.2  2023-08-08'
 LOGNAME=APPNAME
 
 import subprocess, shlex
 import datetime, time
 import argparse, sys
 import logging
+
+def get_zfs_main_version():
+    # Get the output of the `zfs version` command
+    output = subprocess.check_output(["zfs", "version"])
+    
+    # Parse the output and get the ZFS version
+    temp = output.decode("utf-8").split('.')[0]
+    mainversion = temp.split('-')[1]
+    return int(mainversion)
 
 def subrun(command,checkretcode=True,**kwargs):
     '''
@@ -359,7 +369,10 @@ class zfsdataset(object):
             else:
                 self.log.info(cmd)
                 self.snapcount -= 1 # Jetzt ist wirklich einer weniger
-                args = f"zpool wait -t free {self.pool}"
+                if get_zfs_main_version() >= 2:
+                    args = f"zpool wait -t free {self.pool}"
+                else:
+                    time.sleep(20) # 20 Sekunden warten damit das Löschen soweit durch ist (nur bei zfs < 2.0)
                 aus = subrun(args,stdout=subprocess.PIPE,universal_newlines=True) 
                 return True
         

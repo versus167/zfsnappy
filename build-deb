@@ -2,5 +2,5 @@
 sudo cp zfsnappy.py ./zfsnappy/usr/bin/zfsnappy
 sudo chown root:root ./zfsnappy/usr/bin/zfsnappy
 sudo chmod 0555 ./zfsnappy/usr/bin/zfsnappy
-dpkg-deb --build zfsnappy
+dpkg-deb -Zxz --build zfsnappy
 

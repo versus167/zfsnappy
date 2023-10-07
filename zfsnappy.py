@@ -132,6 +132,9 @@ class zfsnappy(object):
             self.log.info('Kein korrektes Filesystem übergeben!')
             return
         self.log.debug(self.fslist)
+        if self.ns.recursion_new == "zfs" and self.ns.withoutroot:
+            self.log.info('Option --without-root ist nicht kompatibel mit --R zfs!')
+            return
         if self.ns.withoutroot:
             startlist = 1
         else:
@@ -160,11 +163,13 @@ class zfsnappy(object):
         parser.add_argument('-v','--verbose',dest='verbose',action='store_true',help='Macht das Script etwas gesprächiger')
         parser.set_defaults(verbose=False)
         parser.add_argument('-r','--recursion',dest='recursion',action='store_true',required='--without-root' in sys.argv,
-                            help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an')
-        parser.set_defaults(recursion=False)
+                            help='Wendet die Einstellungen auch auf alle Filesysteme unterhalb dem übergebenen an - wenn -R angegeben dann wird -r ignoriert')
+        parser.add_argument('-R','--Recursive',dest='recursion_new',choices=['zfsnappy','zfs'],
+                            help='bei "zfsnappy" Einstellungen werden auch auf alle Dateisysteme unterhalb des übergeben angewendet. Bei "zfs" wird die Funktionalität von zfs dafür verwendet')
+        
         parser.add_argument('-k','--keep',dest='keepsnapshots',type=int,help='Diese Anzahl an Snapshots wird auf jeden Fall innerhalb der NODELETEDAYS behalten',default=0)
         parser.add_argument('-x','--no_snapshot',dest='no_snapshot',action='store_true',help='Erstellt keinen neuen Snapshot - Löscht aber, wenn nötig.')
-        parser.add_argument('--dry-run',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
+        parser.add_argument('--dryrun',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
         parser.add_argument('--without-root',dest='withoutroot',
                             help="zfsnappy wird nicht auf den root des übergebenen Filesystems angewendet",action="store_true")
         self.ns = parser.parse_args(sys.argv[1:])
@@ -185,7 +190,7 @@ class zfsnappy(object):
         Schaut mal was für Filesysteme zu behandeln sind
         '''
         self.fslist = []
-        if self.ns.recursion:
+        if (self.ns.recursion_new == None and self.ns.recursion) or self.ns.recursion_new == "zfsnappy": 
             # dann sammeln wir mal die Filesysteme
             arg = shlex.split('zfs list -H -r '+self.ns.zfsfs)
             liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
@@ -356,7 +361,12 @@ class zfsdataset(object):
 
     
     def destroysnapshot(self,snap):
-        cmd = 'zfs destroy '+snap
+        
+        if self.ns.recursion_new == "zfs":
+            add_r = "-r" 
+        else:
+            add_r = ''
+        cmd = f'zfs destroy {add_r} {snap}'
         args = shlex.split(cmd)
         
         if self.ns.dryrun:
@@ -379,8 +389,8 @@ class zfsdataset(object):
         
     
     def check_hold(self,snapshot):
-        # Checkt ob auf dem Snapshot auf hold steht - true falls ja
-        cmd = ' zfs list -H -d 1 -t snapshot -o userrefs,name '+snapshot
+       
+        cmd = f' zfs list -H -d 1 -t snapshot -o userrefs,name {snapshot}'
         ret = subrun(cmd,stdout=subprocess.PIPE,universal_newlines=True)
         ret.check_returncode()
         if ret.stdout == None:
@@ -394,7 +404,8 @@ class zfsdataset(object):
         return False
     
     def getsnaplist(self):
-        arg = shlex.split('zfs list -H -r -t snapshot -o name '+self.fsys)
+        ''' Sucht die Snapshots zum Filesystem heraus '''
+        arg = shlex.split('zfs list -H -t snapshot -o name '+self.fsys) # -r entfernt da imho hier nicht zielführend 2023-10-07 
         aus = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
         aus.check_returncode()
         # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
@@ -413,6 +424,11 @@ class zfsdataset(object):
         
     
     def takesnapshot(self):
+        
+        if self.ns.recursion_new == "zfs":
+            add_r = "-r" 
+        else:
+            add_r = ''
         if self.ns.no_snapshot:
             self.log.debug(f'{self.fsys}: Kein Snapshot wegen -x')
             return
@@ -421,7 +437,7 @@ class zfsdataset(object):
             self.log.info(f'{self.fsys}: Take Snapshot')
             aktuell = datetime.datetime.utcnow()
             snapname = self.fsys+'@'+self.ns.prefix+'_'+aktuell.isoformat() 
-            cmd = 'zfs snapshot '+snapname
+            cmd = f'zfs snapshot {add_r} {snapname}'
             self.log.info(cmd)
             if self.ns.dryrun:
                 pass

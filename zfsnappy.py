@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2023.35.3.36.b1 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
+2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
 2023.35.3 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
 2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
 2022.34 - 2022-01-24 - --without-root - Nur subsysteme werden behandelt - vs.
@@ -57,7 +57,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2023.35.3.36.b1  2023-10-08'
+VERSION='2023.36 2023-10-08'
 LOGNAME=APPNAME
 
 import subprocess, shlex

@@ -147,12 +147,12 @@ class zfsnappy(object):
     def paramters(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         defaultintervall = []
-        
+        parser.add_argument("--proxmox",dest="proxmox",help="Proxmox-Mode - erstellt snapshots von VMs und Containern",action="store_true",default=False)
         parser.add_argument("-i", "--holdinterval", dest="holds",
                       help="Holdintervall und Dauer - Beispiel -i 1 10 (Intervall = 1 Tag, Anzahl = 10 Intervalle)",
                       nargs=2,type=int,action='append',default=defaultintervall)
         parser.add_argument("-f","--filesystem",dest='zfsfs',
-                          help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen',required=True)
+                          help='Übergabe des ZFS-Filesystems auf den die Snapshots ausgeführt werden sollen')
         parser.add_argument('-m','--minfree',dest='minfree',
                           help='Mindestens freizuhaltender Space auf dem FS in vollen Prozent',type=int, default=20)
         parser.add_argument('-s','--spacefree',dest='freespace',
@@ -452,6 +452,42 @@ class zfsdataset(object):
                     self.log.info("Abbruch, da Snapshot nicht erstellt werden konnte!")
                     exit()
                 self.snapcount += 1
+
+class proxmox(zfsdataset):
+    ''' Hier werden die Proxmox Container oder VMs behandelt. Auf ein paar Funktionen der zfsdatasets
+    kann dabei zurückgegriffen werden '''
+    def __init__(self,argumente):
+        '''
+        Führt die Operationen auf dem aktuellen Server aus
+        
+        Standard: Geht durch qm list und pct list und behandelt die Snapshots
+        
+        '''
+        
+
+        self.log = logging.getLogger(LOGNAME)
+        self.ns = argumente
+        # dm 1 ist nicht gestattet
+        if self.ns.dm == 1:
+            self.log.warn("--deletemode 1 wird bei Proxmox nicht unterstützt!") # zu prüfen, ob man den freespace checken kann?!
+            return 
+        if self.ns.dm == 3:
+            self.snapcount = 0
+            # Hier wird nur gecheckt, ob genug Platz ist und der Snapshot gesetzt
+            if self.checkminfree(True):
+                self.takesnapshot()
+            else:
+                self.log.info(f'{self.fsys}: Kein Snapshot erstellt, da nicht genügend Platz auf dem Dataset.')
+            return
+        self.snaplist = self.getsnaplist()
+        self.log.debug(self.snaplist)
+        self.log.info(f'{self.fsys}: {self.snapcount} Snapshots vor dem Start.')
+        self.checkminfree(True)
+        self.cleanup_snapshots()
+        self.takesnapshot()
+        self.log.info(f'{self.fsys}: {self.snapcount} Snapshots nach Ablauf.')
+        self.checkminfree(True)
+        pass
         
 if __name__ == '__main__':
     a = zfsnappy()

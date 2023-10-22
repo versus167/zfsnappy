@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2023.36.37.b1 - 2023-10-19 - Varinate um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
+2023.36.37.b1 - 2023-10-19 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
 2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
 2023.35.3 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
 2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
@@ -127,9 +127,20 @@ class zfsnappy(object):
     '''
     def __init__(self,):
         
-        self.paramters()
+        self.parameters()
         self.log.debug(self.ns)
         self.log.info(f'{APPNAME} {VERSION} ************************** Start')
+        
+        if self.ns.proxmox == True:
+            self.base = proxmox_base(self.ns)
+        else:
+            self.base = zfs_base(self.ns.zfsfs,self.ns)
+        for filesys in self.base.get_systems():
+            pass
+            
+        
+        
+        # ab hier alt
         if self.collectdatasets() == False:
             self.log.info('Kein korrektes Filesystem übergeben!')
             return
@@ -144,7 +155,7 @@ class zfsnappy(object):
         for fsys in self.fslist[startlist:]:
             zfsdataset(fsys,self.ns)
         self.log.info(f'{APPNAME} {VERSION} ************************** Ende')
-    def paramters(self):
+    def parameters(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         defaultintervall = []
         parser.add_argument("--proxmox",dest="proxmox",help="Proxmox-Mode - erstellt snapshots von VMs und Containern",action="store_true",default=False)
@@ -187,32 +198,11 @@ class zfsnappy(object):
         fh.setFormatter(formatter)
         self.log.addHandler(fh)
         
-    def collectdatasets(self):
-        '''
-        Schaut mal was für Filesysteme zu behandeln sind
-        '''
-        self.fslist = []
-        if (self.ns.recursion_new == None and self.ns.recursion) or self.ns.recursion_new == "zfsnappy": 
-            # dann sammeln wir mal die Filesysteme
-            arg = shlex.split('zfs list -H -r '+self.ns.zfsfs)
-            liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
-            liste.check_returncode()
-            for i in liste.stdout.split('\n')[:-1]:
-                temp_fs = i.split('\t')[0]
-                if self.checkfs(temp_fs):
-                    self.fslist.append(temp_fs)
-        
-        else:
-            if self.checkfs(self.ns.zfsfs):
-                self.fslist.append(self.ns.zfsfs)
-        if len(self.fslist) > 0:
-            return True
-        else:
-            return False
+
     
     def checkfs(self,fsys):
-        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt ist oder ob es nicht gemountet ist
-        - Wenn eines von beiden zutrifft -> kein snapshot - return false '''
+        ''' Soll schauen, ob das Filesystem auf com.sun:auto-snapshot=False gesetzt 
+        Wenn das zutrifft -> kein snapshot - return false '''
         ret = subprocess.run(['zfs','get','-H','type',fsys],stdout=subprocess.PIPE,universal_newlines=True)
         if ret.returncode > 0:
             return False
@@ -231,7 +221,7 @@ class zfsnappy(object):
             return False
         return True
 
-class zfsdataset(object):
+class zfs_dataset(object):
     '''
     Soll das einzelne Dataset entsprechend der Parameter behandeln
     '''
@@ -243,7 +233,7 @@ class zfsdataset(object):
 
         self.log = logging.getLogger(LOGNAME)
         self.fsys = fsys
-        self.pool = fsys.split('/')[0]
+        self.get_rootfs(fsys)
         self.ns = argumente
         if self.ns.dm == 3:
             self.snapcount = 0
@@ -262,8 +252,13 @@ class zfsdataset(object):
         self.log.info(f'{self.fsys}: {self.snapcount} Snapshots nach Ablauf.')
         self.checkminfree(True)
         pass
-    
-    
+    def snapname(self):
+        aktuell = datetime.datetime.utcnow()
+        snapname = self.ns.prefix+'_'+aktuell.isoformat() 
+        return snapname
+    def get_rootfs(self,fsys):
+        # für Proxmox zu ändern
+        self.pool = fsys.split('/')[0]
     def cleanup_snapshots(self):
         ''' Geht durch die Snaps und checkt die Löschbedingung '''
         inters = []
@@ -337,9 +332,10 @@ class zfsdataset(object):
         return days
     
     def checkminfree(self,tell=False):
+        
         ''' Prüft den freien Space im FS 
         
-        true fals ja'''
+        true falls ja'''
                
         avai = subprocess.run(['zfs','list','-Hp','-o','avail',self.fsys],stdout=subprocess.PIPE,universal_newlines=True)
         used = subprocess.run(['zfs','list','-Hp','-o','used',self.fsys],stdout=subprocess.PIPE,universal_newlines=True)
@@ -437,8 +433,7 @@ class zfsdataset(object):
         
         if self.checkminfree():
             self.log.info(f'{self.fsys}: Take Snapshot')
-            aktuell = datetime.datetime.utcnow()
-            snapname = self.fsys+'@'+self.ns.prefix+'_'+aktuell.isoformat() 
+            snapname = self.fsys+'@'+ self.snapname()
             cmd = f'zfs snapshot {add_r} {snapname}'
             self.log.info(cmd)
             if self.ns.dryrun:
@@ -453,41 +448,86 @@ class zfsdataset(object):
                     exit()
                 self.snapcount += 1
 
-class proxmox(zfsdataset):
+class proxmox_dataset(zfs_dataset):
     ''' Hier werden die Proxmox Container oder VMs behandelt. Auf ein paar Funktionen der zfsdatasets
     kann dabei zurückgegriffen werden '''
-    def __init__(self,argumente):
-        '''
-        Führt die Operationen auf dem aktuellen Server aus
-        
-        Standard: Geht durch qm list und pct list und behandelt die Snapshots
-        
-        '''
-        
-
-        self.log = logging.getLogger(LOGNAME)
-        self.ns = argumente
-        # dm 1 ist nicht gestattet
-        if self.ns.dm == 1:
-            self.log.warn("--deletemode 1 wird bei Proxmox nicht unterstützt!") # zu prüfen, ob man den freespace checken kann?!
-            return 
-        if self.ns.dm == 3:
-            self.snapcount = 0
-            # Hier wird nur gecheckt, ob genug Platz ist und der Snapshot gesetzt
-            if self.checkminfree(True):
-                self.takesnapshot()
-            else:
-                self.log.info(f'{self.fsys}: Kein Snapshot erstellt, da nicht genügend Platz auf dem Dataset.')
+    def checkminfree(self):
+        ''' Für Proxmox immer true, da nicht direkt geprüft werden kann '''
+        return True
+    def check_hold(self,snapshot):
+        ''' Für Proxmox immer false, da kein hold-tag direkt mit dem snapshot verknüpft '''
+        return False
+    def get_rootfs(self, fsys):
+        self.pool = None
+    def takesnapshot(self):
+        if self.ns.no_snapshot:
+            self.log.debug(f'{self.fsys}: Kein Snapshot wegen -x')
             return
-        self.snaplist = self.getsnaplist()
-        self.log.debug(self.snaplist)
-        self.log.info(f'{self.fsys}: {self.snapcount} Snapshots vor dem Start.')
-        self.checkminfree(True)
-        self.cleanup_snapshots()
-        self.takesnapshot()
-        self.log.info(f'{self.fsys}: {self.snapcount} Snapshots nach Ablauf.')
-        self.checkminfree(True)
+        self.log.info(f'{self.fsys}: Take Snapshot')
+        snapname = self.snapname()
+        
+class proxmox_base(object):
+    '''
+    Zuständig für Proxmox-Server
+    '''
+    def __init__(self,argumente):
+        pass
+    def collect_vms(self):
+        ''' Sammelt alle VMs
+        '''
+        pass
+    def collect_ct(self):
+        ''' Sammelt alle Container '''
         pass
         
+
+class zfs_base(object):
+    '''
+    Zuständig für zfs-datasets
+    '''
+    def __init__(self,argumente):
+        ''' Sammelte die zu behandelnden datasets
+        '''
+        self.ns = argumente
+        
+    
+    def collect_sets(self):
+        ''' Sammelt jetzt tatsächlich -> im zfs-mode
+        '''
+        self.fslist = []
+        if (self.ns.recursion_new == None and self.ns.recursion) or self.ns.recursion_new == "zfsnappy": 
+            # dann sammeln wir mal die Filesysteme
+            arg = shlex.split('zfs list -H -r '+self.ns.zfsfs)
+            liste = subprocess.run(arg,stdout=subprocess.PIPE,universal_newlines=True)
+            liste.check_returncode()
+            for i in liste.stdout.split('\n')[:-1]:
+                temp_fs = i.split('\t')[0]
+                if self.checkfs(temp_fs):
+                    self.fslist.append(temp_fs)
+        
+        else:
+            if self.checkfs(self.ns.zfsfs):
+                self.fslist.append(self.ns.zfsfs)
+        if len(self.fslist) > 0:
+            return True
+        else:
+            return False
+    def get_systems(self):
+        ''' Übergibt die Systeme '''
+        pass
+    
+class zfs_snapset(object):
+    ''' zfs - snapshots dieses filesystems '''
+    def __init__(self,fsys,argumente):
+        self.ns = argumente
+        
+    
+
+class proxmox_snapset(object):
+    ''' VM oder CT von Proxmox-Server '''
+    def __init__(self,vm,argumente):
+        self.ns = argumente        
+    
+    
 if __name__ == '__main__':
     a = zfsnappy()

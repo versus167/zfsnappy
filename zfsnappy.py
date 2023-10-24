@@ -138,13 +138,7 @@ class zfsnappy(object):
         for filesys in self.base.get_systems():
             filesys.ablauf()
             pass
-            
         
-        return
-        # ab hier alt
-        
-        for fsys in self.fslist[startlist:]:
-            zfsdataset(fsys,self.ns)
         self.log.info(f'{APPNAME} {VERSION} ************************** Ende')
     def parameters(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -217,11 +211,11 @@ class zfs_dataset(object):
             else:
                 self.log.info(f'{self.fsys}: Kein Snapshot erstellt, da nicht genügend Platz auf dem Dataset.')
             return
-        self.snaplist = self.get_snaplist()
-        self.log.debug(self.snaplist.snaplist)
-        self.log.info(f'{self.fsys}: {self.snaplist.snapcount} Snapshots vor dem Start.')
+        self.get_snaplist()
+        self.log.debug(self.snaplist)
+        self.log.info(f'{self.fsys}: {self.snapcount} Snapshots vor dem Start.')
         self.checkminfree(True)
-        self.snaplist.cleanup_snapshots()
+        self.cleanup_snapshots()
         self.takesnapshot()
         self.log.info(f'{self.fsys}: {self.snapcount} Snapshots nach Ablauf.')
         self.checkminfree(True)
@@ -367,17 +361,6 @@ class zfs_dataset(object):
                 self.log.info(f'{self.fsys}: zu wenig GB frei - {a/(1024*1024*1024):.3f} < {self.ns.freespace} GB')
             return False
         return True
-
-    
-    
-        
-    
-    
-    
-    def get_snaplist(self):
-        ''' Sucht die Snapshots zum Filesystem heraus '''
-        ret = zfs_snapset(self.fsys)
-        
         
     def destroysnapshot(self,snap):
         

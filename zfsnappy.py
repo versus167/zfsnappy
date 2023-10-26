@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2023.36.37.a1 - 2023-10-19 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
+2023.36.37.a2 - 2023-10-19 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
 2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
 2023.35.3 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
 2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
@@ -58,7 +58,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2023.36.37.a1 2023-10-19'
+VERSION='2023.36.37.a2 2023-10-19'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -257,7 +257,7 @@ class zfs_dataset(object):
             self.log.debug(f'{self.fsys}: Abbruch cleanup, da genug Platz')
             return
         # Also noch nicht genug Platz -> Löschen vom ältesten Snapshot Abbruchbedingung
-        self.snaplist = self.getsnaplist()
+        self.snaplist = self.get_snaplist()
         self.log.info(f'{self.fsys}: Jetzt wird versucht auf Grund des Speicherplatzes weitere Snapshots zu löschen.')
         count = -1
         for snap in self.snaplist:

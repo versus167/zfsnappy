@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2023.36.37.a5 - 2023-10-31 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
+2023.36.37.b1 - 2023-10-31 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
 2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
 2023.35.3 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
 2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
@@ -58,7 +58,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2023.36.37.a5 2023-10-31'
+VERSION='2023.36.37.b1 2023-10-31'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -445,7 +445,10 @@ class pct_dataset(zfs_dataset):
         self.snapcount += 1
         
     def destroysnapshot(self,snap):
-        pass
+        cmd = f'{self.command()} delsnapshot {self.fsys} {snap}'
+        subrun(cmd)
+        self.snapcount -= 1
+        
     
     def get_snaplist(self):
         
@@ -586,12 +589,6 @@ class zfs_base(object):
         for i in self.fslist[self.startlist:]:
             ret = zfs_dataset(i,self.ns)
             yield ret
-    
-
-class proxmox_snapset(object):
-    ''' VM oder CT von Proxmox-Server '''
-    def __init__(self,vm,argumente):
-        self.ns = argumente        
     
     
 if __name__ == '__main__':

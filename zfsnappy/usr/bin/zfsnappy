@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2023.36.37.a4 - 2023-10-19 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
+2023.36.37.a5 - 2023-10-31 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
 2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
 2023.35.3 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
 2023.35 - 2023-08-06 - nun wird die zpool wait-Funktion (ab zfs 2) verwendet - option wait ist raus - vs.
@@ -58,7 +58,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2023.36.37.a4 2023-10-19'
+VERSION='2023.36.37.a5 2023-10-31'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -416,11 +416,14 @@ class zfs_dataset(object):
                     self.log.info("Abbruch, da Snapshot nicht erstellt werden konnte!")
                     exit()
                 self.snapcount += 1
-
-class proxmox_dataset(zfs_dataset):
-    ''' Hier werden die Proxmox Container oder VMs behandelt. Auf ein paar Funktionen der zfsdatasets
+    
+class pct_dataset(zfs_dataset):
+    ''' Hier werden die Proxmox Container behandelt. Auf ein paar Funktionen der zfsdatasets
     kann dabei zurückgegriffen werden '''
-    def checkminfree(self):
+    def command(self):
+        return "pct"
+    
+    def checkminfree(self,tell=False):
         ''' Für Proxmox immer true, da nicht direkt geprüft werden kann '''
         return True
     def check_hold(self,snapshot):
@@ -434,23 +437,84 @@ class proxmox_dataset(zfs_dataset):
             return
         self.log.info(f'{self.fsys}: Take Snapshot')
         snapname = self.snapname()
+        if self.ns.dryrun:
+            return
+        cmd = f'{self.command()} snapshot {self.fsys} {snapname}'
+        self.log.info(cmd)
+        subrun(cmd)
+        self.snapcount += 1
+        
+    def destroysnapshot(self,snap):
+        pass
+    
+    def get_snaplist(self):
+        
+        arg = f'{self.command()} listsnapshot {self.fsys}'
+        aus = subrun(arg,stdout=subprocess.PIPE,universal_newlines=True)
+        # 2. Ausdünnen der Liste um die die nicht den richtigen Prefix haben
+        vgl = self.ns.prefix+'_'
+        l = len(vgl)
+        listesnaps = []
+        for snp in aus.stdout.split('\n')[:-1]:
+            self.log.debug(snp)
+            snapn = snp.split()[1]
+            if snapn[0:l] == vgl:
+                if self.check_hold(snp): # Schmeisst die auf Keep auch raus
+                    continue
+                else:
+                    listesnaps.append(snapn)
+        self.snapcount = len(listesnaps)
+        self.snaplist = sorted(listesnaps)
+    def diffdays(self,snap):
+        #erstmal die difftage zu heute ermitteln
+        newsnap = f'{self.fsys}@{snap}'
+        return super().diffdays(newsnap)
+
+class qm_dataset(pct_dataset):
+    ''' Ein Vm-Dataset in Proxmox - also sehr ähnlich zum CT-Dataset '''
+    def command(self):
+        return "qm"
         
 class proxmox_base(object):
     '''
     Zuständig für Proxmox-Server
     '''
     def __init__(self,argumente):
+        self.ns = argumente
         self.log = logging.getLogger(LOGNAME)
+        self.vms = self.collect_vms()
+        self.cts = self.collect_cts()
+        self.log.debug(f"VMs: {self.vms}")
+        self.log.debug(f'CTs: {self.cts}')
         pass
     def collect_vms(self):
         ''' Sammelt alle VMs
         '''
-        pass
-    def collect_ct(self):
+        vms = []
+        erg = subrun("qm list",stdout=subprocess.PIPE,universal_newlines=True)
+        for i in erg.stdout.split('\n')[1:-1]:
+            vm = i.split()
+            vms.append(vm[0])
+        return vms
+    
+    def collect_cts(self):
         ''' Sammelt alle Container '''
-        pass
+        cts = []
+        erg = subrun("pct list",stdout=subprocess.PIPE,universal_newlines=True)
         
-
+        for i in erg.stdout.split('\n')[1:-1]:
+            ct = i.split()
+            cts.append(ct[0])
+        return cts
+    
+    def get_systems(self):
+        ''' Übergibt die Systeme zur weiteren Behandlung'''
+        for i in self.vms:
+            ret = qm_dataset(i,self.ns)
+            yield ret    
+        for i in self.cts:
+            ret = pct_dataset(i,self.ns)
+            yield ret
 class zfs_base(object):
     '''
     Zuständig für zfs-datasets

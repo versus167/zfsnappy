@@ -446,9 +446,10 @@ class pct_dataset(zfs_dataset):
         
     def destroysnapshot(self,snap):
         cmd = f'{self.command()} delsnapshot {self.fsys} {snap}'
+        self.log.info(cmd)
         subrun(cmd)
         self.snapcount -= 1
-        
+        time.sleep(5)
     
     def get_snaplist(self):
         

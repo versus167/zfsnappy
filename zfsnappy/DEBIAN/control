@@ -1,5 +1,5 @@
 Package: zfsnappy
-Version: 2023.36.37.b1
+Version: 2023.37
 Section: server
 Priority: optional
 Architecture: all

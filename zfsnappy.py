@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2024.39 - 2024-03-17 - neu: --touchfile - fix: proxmox - vs.   
 2024.38 - 2024-03-17 - Versuch Probleme bei Proxmox abzufangen - vs.
 2023.37 - 2023-11-05 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
 2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
@@ -59,13 +60,14 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2024.38 2024-03-17'
+VERSION='2024.39 2024-03-17'
 LOGNAME=APPNAME
 
 import subprocess, shlex
 import datetime, time
 import argparse, sys
 import logging
+from pathlib import Path 
 
 def get_zfs_main_version():
     # Get the output of the `zfs version` command
@@ -127,19 +129,21 @@ class zfsnappy(object):
     Der Einstieg
     '''
     def __init__(self,):
-        
+        global touch 
         self.parameters()
         self.log.debug(self.ns)
         self.log.info(f'{APPNAME} {VERSION} ************************** Start')
-        
+        touch = True
         if self.ns.proxmox == True:
             self.base = proxmox_base(self.ns)
         else:
             self.base = zfs_base(self.ns)
         for filesys in self.base.get_systems():
             filesys.ablauf()
-            pass
-        
+            self.log.debug(f'touch: {touch}')
+        if touch: # touch = true?! -> dann touch the file
+            if self.ns.touchfile:
+                Path(self.ns.touchfile).touch()
         self.log.info(f'{APPNAME} {VERSION} ************************** Ende')
     def parameters(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -171,6 +175,8 @@ class zfsnappy(object):
         parser.add_argument('--dryrun',dest='dryrun',action='store_true',help='Trockentest ohne Veränderung am System')
         parser.add_argument('--without-root',dest='withoutroot',
                             help="zfsnappy wird nicht auf den root des übergebenen Filesystems angewendet",action="store_true")
+        parser.add_argument('-t','--touchfile',dest='touchfile',
+                            help="Dieses File erhält einen 'Touch', wenn alles ohne Fehler durchging.",required=False)
         self.ns = parser.parse_args(sys.argv[1:])
         if self.ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
             self.ns.holds.append((1,1))
@@ -446,14 +452,20 @@ class pct_dataset(zfs_dataset):
         self.snapcount += 1
         
     def destroysnapshot(self,snap):
+        global touch
         cmd = f'{self.command()} delsnapshot {self.fsys} {snap}'
         self.log.info(cmd)
-        try:
-            subrun(cmd)
+        try: 
+            ret =  subrun(cmd)
+            self.log.debug(ret)
         except:
-            self.log.debug(f'Problem beim Löschen von {self.fsys} {snap}')
-            self.log.debug('Beheben der Problematik per Hand erforderlich! -> Vermutlich muss der Snapshot aus der .conf gelöscht werden.')
-            self.log.debug(f'Es wird versucht die Maschine wieder frei zu bekommen -> {self.command()} unlock {self.fsys}')
+            self.log.error(f'Problem beim Löschen von {self.fsys} {snap}')
+            self.log.error('Beheben der Problematik per Hand erforderlich! -> Vermutlich muss der Snapshot aus der .conf gelöscht werden.')
+            self.log.error(f'Es wird versucht die Maschine wieder frei zu bekommen -> {self.command()} unlock {self.fsys}')
+            cmd = f'{self.command()} unlock {self.fsys}'
+            subrun(cmd)
+            touch = False
+            
         self.snapcount -= 1
         time.sleep(1) # Lassen wir proxmox etwas Zeit - bisher ging das aber immer recht flott
     

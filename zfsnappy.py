@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2024.38 - 2024-03-17 - Versuch Probleme bei Proxmox abzufangen - vs.
 2023.37 - 2023-11-05 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
 2023.36 - 2023-10-08 - alternative Recursion -R [zfs|zfsnappy] eingeführt -> zfs ist Rekursion im ZFS-Style - vs.
 2023.35.3 - 2023-08-08 - Kompatibilität mit zfs < 2.0 wieder hergestellt - vs.
@@ -58,7 +59,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2023.37 2023-11-05'
+VERSION='2024.38 2024-03-17'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -447,7 +448,12 @@ class pct_dataset(zfs_dataset):
     def destroysnapshot(self,snap):
         cmd = f'{self.command()} delsnapshot {self.fsys} {snap}'
         self.log.info(cmd)
-        subrun(cmd)
+        try:
+            subrun(cmd)
+        except:
+            self.log.debug(f'Problem beim Löschen von {self.fsys} {snap}')
+            self.log.debug('Beheben der Problematik per Hand erforderlich! -> Vermutlich muss der Snapshot aus der .conf gelöscht werden.')
+            self.log.debug(f'Es wird versucht die Maschine wieder frei zu bekommen -> {self.command()} unlock {self.fsys}')
         self.snapcount -= 1
         time.sleep(1) # Lassen wir proxmox etwas Zeit - bisher ging das aber immer recht flott
     

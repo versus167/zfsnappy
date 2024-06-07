@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2024.39a - 2024-06-01 - Umstellung python utv - vs.
 2024.39 - 2024-03-17 - neu: --touchfile - fix: proxmox - vs.   
 2024.38 - 2024-03-17 - Versuch Probleme bei Proxmox abzufangen - vs.
 2023.37 - 2023-11-05 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
@@ -60,13 +61,13 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2024.39 2024-03-17'
+VERSION='2024.39a.2 2024-06-01'
 LOGNAME=APPNAME
 
 import subprocess, shlex
 import datetime, time
 import argparse, sys
-import logging
+import logging, pytz
 from pathlib import Path 
 
 def get_zfs_main_version():
@@ -77,6 +78,15 @@ def get_zfs_main_version():
     temp = output.decode("utf-8").split('.')[0]
     mainversion = temp.split('-')[1]
     return int(mainversion)
+
+
+def get_utc_now_naive():
+    """Gets the current UTC time as a timezone-aware datetime object."""
+    utc = pytz.utc
+    now_utc_aware = utc.localize(datetime.datetime.now())
+    heute_naive = now_utc_aware.replace(tzinfo=None)
+    return heute_naive
+
 
 def subrun(command,checkretcode=True,**kwargs):
     '''
@@ -228,7 +238,7 @@ class zfs_dataset(object):
         self.checkminfree(True)
     
     def snapname(self):
-        aktuell = datetime.datetime.utcnow()
+        aktuell = get_utc_now_naive()
         snapname = self.ns.prefix+'_'+aktuell.isoformat() 
         snapname = snapname.replace(":",'-').replace('.','-')
         return snapname
@@ -313,7 +323,7 @@ class zfs_dataset(object):
     
     def diffdays(self,snap):
         #erstmal die difftage zu heute ermitteln
-        heute = datetime.datetime.utcnow()
+        heute = get_utc_now_naive()
         vgl = self.fsys+'@'+self.ns.prefix+'_'
         l = len(vgl)
         dstring = snap[l:l+10] # damit wird nun noch mit dem glatten Datum verglichen - ohne Stunde/Minute

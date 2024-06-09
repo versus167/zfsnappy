@@ -5,7 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
-2024.39a - 2024-06-01 - Umstellung python utv - vs.
+2024.40 - 2024-06-01 - Umstellung python utc - vs.
 2024.39 - 2024-03-17 - neu: --touchfile - fix: proxmox - vs.   
 2024.38 - 2024-03-17 - Versuch Probleme bei Proxmox abzufangen - vs.
 2023.37 - 2023-11-05 - Variante um die Snapshots mit Proxmox-Bordmitteln zu erstellen - vs.
@@ -61,7 +61,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2024.39a.2 2024-06-01'
+VERSION='2024.40 2024-06-07'
 LOGNAME=APPNAME
 
 import subprocess, shlex

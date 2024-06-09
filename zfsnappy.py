@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2024.41 - 2024-06-09 - Vermeidet pytz - vs.
 2024.40 - 2024-06-01 - Umstellung python utc - vs.
 2024.39 - 2024-03-17 - neu: --touchfile - fix: proxmox - vs.   
 2024.38 - 2024-03-17 - Versuch Probleme bei Proxmox abzufangen - vs.
@@ -61,13 +62,13 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2024.40 2024-06-07'
+VERSION='2024.41 2024-06-09'
 LOGNAME=APPNAME
 
 import subprocess, shlex
 import datetime, time
 import argparse, sys
-import logging, pytz
+import logging
 from pathlib import Path 
 
 def get_zfs_main_version():
@@ -81,11 +82,11 @@ def get_zfs_main_version():
 
 
 def get_utc_now_naive():
-    """Gets the current UTC time as a timezone-aware datetime object."""
-    utc = pytz.utc
-    now_utc_aware = utc.localize(datetime.datetime.now())
-    heute_naive = now_utc_aware.replace(tzinfo=None)
-    return heute_naive
+  """Gets the current UTC time as a timezone-naive datetime object."""
+  now_utc_aware = datetime.datetime.now(tz=datetime.timezone.utc)  # Get current UTC time
+  heute_naive = now_utc_aware.replace(tzinfo=None)  # Remove timezone information
+  return heute_naive
+
 
 
 def subrun(command,checkretcode=True,**kwargs):

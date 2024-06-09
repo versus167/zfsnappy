@@ -2,7 +2,7 @@
 Kleines Pythonscript, welches unkompliziert die Zauberei mit snapshots in ZFS übernimmt. Imho einfacher und flexibler als die übrigen verfügbaren Tools. Ist aber wohl Geschmackssache ;)
 
 Okay, readme muss noch erstellt werden... zfsnappy -h sollte derweil helfen:
-
+```
 usage: zfsnappy [-h] [--proxmox] [-i HOLDS HOLDS] [-f ZFSFS] [-m MINFREE] [-s FREESPACE] [-p PREFIX] [-d DM] [-n NODELETEDAYS] [-v] [-r] [-R {zfsnappy,zfs}]
                 [-k KEEPSNAPSHOTS] [-x] [--dryrun] [--without-root] [-t TOUCHFILE]
 
@@ -35,4 +35,4 @@ options:
   --without-root        zfsnappy wird nicht auf den root des übergebenen Filesystems angewendet (default: False)
   -t TOUCHFILE, --touchfile TOUCHFILE
                         Dieses File erhält einen 'Touch', wenn alles ohne Fehler durchging. (default: None)
-
+```

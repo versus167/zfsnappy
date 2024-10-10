@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2024.42 - 2024-10-10 - promox: templates bekommen keine snapshots - vs.
 2024.41 - 2024-06-09 - Vermeidet pytz - vs.
 2024.40 - 2024-06-01 - Umstellung python utc - vs.
 2024.39 - 2024-03-17 - neu: --touchfile - fix: proxmox - vs.   
@@ -62,7 +63,7 @@ PATH=/usr/bin:/bin:/sbin
 '''
 
 APPNAME='zfsnappy'
-VERSION='2024.41 2024-06-09'
+VERSION='2024.42 2024-10-10'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -82,10 +83,10 @@ def get_zfs_main_version():
 
 
 def get_utc_now_naive():
-  """Gets the current UTC time as a timezone-naive datetime object."""
-  now_utc_aware = datetime.datetime.now(tz=datetime.timezone.utc)  # Get current UTC time
-  heute_naive = now_utc_aware.replace(tzinfo=None)  # Remove timezone information
-  return heute_naive
+    """Gets the current UTC time as a timezone-naive datetime object."""
+    now_utc_aware = datetime.datetime.now(tz=datetime.timezone.utc)  # Get current UTC time
+    heute_naive = now_utc_aware.replace(tzinfo=None)  # Remove timezone information
+    return heute_naive
 
 
 
@@ -525,9 +526,18 @@ class proxmox_base(object):
         '''
         vms = []
         erg = subrun("qm list",stdout=subprocess.PIPE,universal_newlines=True)
-        for i in erg.stdout.split('\n')[1:-1]:
-            vm = i.split()
-            vms.append(vm[0])
+        for line in erg.stdout.split('\n')[1:-1]:
+            vm = line.split()
+            if vm:  # Überprüfen, ob die Zeile nicht leer ist
+                vmid = vm[0]
+            
+                # Überprüfen, ob die VM ein Template ist
+                config_cmd = f"qm config {vmid}"
+                config_output = subprocess.run(config_cmd, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+            
+                if "template: 1" not in config_output.stdout:
+                    vms.append(vmid)
+                    
         return vms
     
     def collect_cts(self):

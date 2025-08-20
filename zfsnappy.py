@@ -5,6 +5,7 @@ Created on 10.12.2016
 
 @author: volker.suess
 
+2025.43 - 2025-08-19 - check ob lxc oder qm vorhanden (falls option gesetzt) bevor run - vs.
 2024.42 - 2024-10-10 - promox: templates bekommen keine snapshots - vs.
 2024.41 - 2024-06-09 - Vermeidet pytz - vs.
 2024.40 - 2024-06-01 - Umstellung python utc - vs.
@@ -62,8 +63,9 @@ PATH=/usr/bin:/bin:/sbin
 
 '''
 
+
 APPNAME='zfsnappy'
-VERSION='2024.42 2024-10-10'
+VERSION='2025.43 2025-08-19'
 LOGNAME=APPNAME
 
 import subprocess, shlex
@@ -146,6 +148,23 @@ class zfsnappy(object):
         self.log.debug(self.ns)
         self.log.info(f'{APPNAME} {VERSION} ************************** Start')
         touch = True
+        if self.ns.check_lxc or self.ns.check_qm:
+            # Dann sollten wir auf einem Proxmox sein und checken welche VM vorhanden sind
+            prox_temp = proxmox_base(self.ns)
+            dorun = False
+            if self.ns.check_lxc:
+                if self.ns.check_lxc in prox_temp.cts:
+                    dorun = True
+            if self.ns.check_qm:
+                if self.ns.check_qm in prox_temp.vms:
+                    dorun = True
+            if dorun == False:
+                # Weder lxc noch vm sind da -> exit ohne Fehler
+                if touch: # touch = true?! -> dann touch the file
+                    if self.ns.touchfile:
+                        Path(self.ns.touchfile).touch()
+                self.log.info(f'{APPNAME} {VERSION} ************************** Ende')
+                return
         if self.ns.proxmox == True:
             self.base = proxmox_base(self.ns)
         else:
@@ -189,6 +208,8 @@ class zfsnappy(object):
                             help="zfsnappy wird nicht auf den root des übergebenen Filesystems angewendet",action="store_true")
         parser.add_argument('-t','--touchfile',dest='touchfile',
                             help="Dieses File erhält einen 'Touch', wenn alles ohne Fehler durchging.",required=False)
+        parser.add_argument('--check_lxc',required=False,default=None,type=str,dest="check_lxc",help="Nur wenn es diesen Container auf diesem Proxmox gibt, läuft das Script weiter.")
+        parser.add_argument('--check_qm',required=False,default=None,type=str,dest="check_qm",help="Nur wenn es diese VM auf diesem Proxmox gibt, läuft das Script weiter.")
         self.ns = parser.parse_args(sys.argv[1:])
         if self.ns.holds == []: # falls keine Intervalle übergeben wurden -> 1 1 als minimum
             self.ns.holds.append((1,1))
